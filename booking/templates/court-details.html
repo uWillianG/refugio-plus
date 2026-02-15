@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refúgio+ - Detalhes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container fade-in">
+        <header class="app-header">
+            <button class="btn-icon" onclick="history.back()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </button>
+            <span class="header-title" id="detailTitle">Detalhes da Quadra</span>
+            <div style="width: 44px;"></div>
+        </header>
+
+        <div class="hero-image">
+            <!-- Placeholder for court image -->
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <path d="M12 4v16"></path>
+                <path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"></path>
+            </svg>
+            <div class="hero-overlay">
+                <h2 id="heroCourtName" style="margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Quadra Principal</h2>
+            </div>
+        </div>
+
+        <div class="card" style="border: none; background: transparent; padding-left: 0; padding-right: 0;">
+            <h3>Sobre o espaço</h3>
+            <p class="text-secondary" style="margin-top: 8px;">
+                Espaço profissional com iluminação LED de alta qualidade e piso amortecedor. Ideal para jogos noturnos e competições.
+            </p>
+        </div>
+
+        <div class="amenities-list">
+            <span class="amenity-tag">Iluminação LED</span>
+            <span class="amenity-tag">Piso Oficial</span>
+            <span class="amenity-tag">Arquibancada</span>
+            <span class="amenity-tag">Bebedouro</span>
+        </div>
+
+        <h3 style="margin-bottom: 16px;">Horários Disponíveis</h3>
+        <div id="detailTimeGrid" class="time-grid" style="margin-bottom: 32px;">
+            <!-- Populated by JS -->
+        </div>
+
+        <button class="btn btn-primary" onclick="alert('Funcionalidade de reserva direta em desenvolvimento!')">Reservar Agora</button>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

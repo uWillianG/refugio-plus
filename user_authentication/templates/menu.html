@@ -1,0 +1,143 @@
+﻿{% block content %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refúgio+ - Início</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        .booking-modal {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 16px;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+
+        .booking-modal.is-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .booking-modal__backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(31, 41, 55, 0.45);
+            backdrop-filter: blur(3px);
+        }
+
+        .booking-modal__content {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 360px;
+            background: var(--color-bg-card);
+            border: var(--border-width) solid var(--color-warm-orange);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-glow-strong);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .booking-modal__title {
+            margin-bottom: 8px;
+            color: var(--color-primary-yellow);
+        }
+
+        .booking-modal__description {
+            margin-bottom: 16px;
+            color: var(--color-text-secondary);
+        }
+
+        .booking-modal__actions .btn:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container center-content fade-in" style="position: relative; overflow: hidden;">
+
+        <div style="margin-bottom: 40px; position: relative; z-index: 10;">
+            <!-- Logo with Sun Icon and Title -->
+            <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;">
+                <svg class="sun-spin" width="40" height="40" viewBox="0 0 24 24" fill="none"
+                    stroke="var(--color-primary-yellow)" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <h1 style="margin-bottom: 0;">Refúgio+</h1>
+            </div>
+            <p class="text-secondary" style="font-size: 16px;">Sistema de agendamentos</p>
+        </div>
+
+        <div style="width: 100%; max-width: 320px; position: relative; z-index: 10;">
+            <button type="button" id="openBookingModal" class="btn btn-primary shadow-glow-strong">Agendar um horário</button>
+            <a href="menu.html" class="btn btn-secondary">Cardápio</a>
+        </div>
+
+    </div>
+
+    <div id="bookingAuthModal" class="booking-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="bookingModalTitle">
+        <div class="booking-modal__backdrop" data-close-modal="true"></div>
+        <div class="booking-modal__content card fade-in">
+            <h2 id="bookingModalTitle" class="booking-modal__title">Como deseja continuar?</h2>
+            <p class="booking-modal__description">Para agendar, você pode entrar na sua conta ou seguir sem login.</p>
+            <div class="booking-modal__actions">
+                <a href="{% url 'login' %}" class="btn btn-primary">Entrar ou Cadastrar-se</a>
+                <a href="{% url 'booking' %}" class="btn btn-secondary">Seguir sem Login</a>
+                <button type="button" class="btn btn-secondary" data-close-modal="true">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <footer style="padding-top: 20px; position: relative; z-index: 10;">
+        <p class="text-secondary">© 2026 Refúgio+</p>
+    </footer>
+
+    <script src="{% static 'js/script.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('bookingAuthModal');
+            const openButton = document.getElementById('openBookingModal');
+            if (!modal || !openButton) return;
+
+            const closeModal = () => modal.classList.add('is-hidden');
+            const openModal = () => modal.classList.remove('is-hidden');
+
+            openButton.addEventListener('click', openModal);
+            modal.addEventListener('click', (event) => {
+                if (event.target.matches('[data-close-modal="true"]')) {
+                    closeModal();
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeModal();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
+{% endblock %}
