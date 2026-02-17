@@ -607,6 +607,17 @@ body.auth-page {
     transform: translateY(0);
 }
 
+.auth-page .button-outline {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    color: #374151;
+    margin-top: 8px;
+}
+
+.auth-page .button-outline:hover {
+    background: #f9fafb;
+}
+
 .auth-page .card-footer {
     margin-top: 16px;
     text-align: center;
@@ -646,4 +657,68 @@ body.auth-page {
 
 .auth-page .toast-success {
     background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+}
+
+.verification-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 1200;
+}
+
+.verification-modal.is-visible {
+    display: flex;
+}
+
+.verification-modal-card {
+    width: 100%;
+    max-width: 440px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid rgba(234, 88, 12, 0.25);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.verification-modal-card h2 {
+    margin-bottom: 8px;
+    color: var(--color-warm-orange);
+}
+
+.verification-modal-card p {
+    margin-bottom: 12px;
+}
+
+.verification-form {
+    margin-top: 10px;
+}
+
+.verification-input {
+    margin-top: 6px;
+    margin-bottom: 10px;
+    padding-left: 14px;
+    text-align: center;
+    letter-spacing: 4px;
+    font-size: 18px;
+}
+
+.verification-info {
+    color: #065f46;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.verification-error {
+    color: #b91c1c;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
 }
