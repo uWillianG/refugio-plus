@@ -108,3 +108,45 @@ class LoginForm(forms.Form):
         except EmailNotValidError:
             raise forms.ValidationError('O e-mail digitado nao e valido')
         return result.normalized
+
+
+class PasswordResetRequestForm(forms.Form):
+    email = forms.EmailField(
+        label='Email',
+        widget=forms.EmailInput(),
+        error_messages={
+            'required': 'Este campo e obrigatorio.',
+            'invalid': 'O e-mail digitado nao e valido',
+        },
+    )
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        try:
+            result = validate_email(email, check_deliverability=False)
+        except EmailNotValidError:
+            raise forms.ValidationError('O e-mail digitado nao e valido')
+        return result.normalized
+
+
+class PasswordResetConfirmForm(forms.Form):
+    password = forms.CharField(
+        label='Nova senha',
+        widget=forms.PasswordInput(),
+        error_messages={'required': 'Este campo e obrigatorio.'},
+    )
+    password_confirm = forms.CharField(
+        label='Confirmar nova senha',
+        widget=forms.PasswordInput(),
+        error_messages={'required': 'Este campo e obrigatorio.'},
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        password_confirm = cleaned_data.get('password_confirm')
+
+        if password and password_confirm and password != password_confirm:
+            self.add_error('password_confirm', 'As senhas nao coincidem.')
+
+        return cleaned_data

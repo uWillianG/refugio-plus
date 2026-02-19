@@ -607,6 +607,44 @@ body.auth-page {
     transform: translateY(0);
 }
 
+.auth-page .forgot-password-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: -2px;
+    margin-bottom: 8px;
+}
+
+.auth-page .forgot-password-button {
+    -webkit-appearance: none;
+    appearance: none;
+    border: none !important;
+    background: none !important;
+    box-shadow: none;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    letter-spacing: 0.3px;
+    transition: color 0.2s ease;
+}
+
+.auth-page .forgot-password-button::after {
+    content: none;
+}
+
+.auth-page .forgot-password-button:hover {
+    color: #4b5563;
+}
+
+.auth-page .forgot-password-button:focus-visible {
+    outline: 2px solid rgba(245, 158, 11, 0.35);
+    outline-offset: 4px;
+    border-radius: 4px;
+}
+
 .auth-page .button-outline {
     background: #ffffff;
     border: 1px solid #d1d5db;

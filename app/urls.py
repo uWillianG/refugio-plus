@@ -8,6 +8,10 @@ from booking.views import BookingView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('login/', login_view, name='login'),
+    path('login/enviar-codigo-recuperacao/', enviar_codigo_recuperacao_view, name='enviar_codigo_recuperacao'),
+    path('login/reenviar-codigo-recuperacao/', reenviar_codigo_recuperacao_view, name='reenviar_codigo_recuperacao'),
+    path('login/verificar-codigo-recuperacao/', verificar_codigo_recuperacao_view, name='verificar_codigo_recuperacao'),
+    path('login/redefinir-senha/', redefinir_senha_view, name='redefinir_senha'),
     path('cadastro/', cadastro_view, name='cadastro'),
     path('cadastro/verificar-codigo/', verificar_codigo_view, name='verificar_codigo'),
     path('cadastro/reenviar-codigo/', reenviar_codigo_view, name='reenviar_codigo'),
