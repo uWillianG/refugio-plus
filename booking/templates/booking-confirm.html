@@ -1,0 +1,75 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refugio Plus - Confirmacao</title>
+    <link rel="stylesheet" href="{% static 'booking/css/style.css' %}">
+</head>
+
+<body>
+    <div class="container fade-in">
+        <header class="app-header">
+            <button class="btn-icon" onclick="history.back()" type="button">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </button>
+            <span class="header-title">Confirmar agendamento</span>
+            <div style="width: 44px;"></div>
+        </header>
+
+        <div class="card">
+            <div class="court-name">{{ selected_court_name }}</div>
+            <p class="text-secondary">{{ selected_date_display }}</p>
+        </div>
+
+        <div class="card">
+            <p><strong>Esporte:</strong> {{ selected_sport_name }}</p>
+            <p><strong>Horario:</strong> {{ selected_start_time }} - {{ selected_end_time }}</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="card">
+                <p>{{ message }}</p>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="court" value="{{ selected_court_id }}">
+            <input type="hidden" name="sport" value="{{ selected_sport_id }}">
+            <input type="hidden" name="date" value="{{ selected_date_iso }}">
+            <input type="hidden" name="start_time" value="{{ selected_start_time }}">
+            <input type="hidden" name="end_time" value="{{ selected_end_time }}">
+
+            {% if not request.user.is_authenticated %}
+            <div class="card">
+                <label for="guest_name"><strong>Nome</strong></label>
+                <input id="guest_name" name="guest_name" type="text" value="{{ guest_name|default:'' }}"
+                    style="width:100%;margin-top:6px;margin-bottom:12px;padding:10px;border:1px solid rgba(234, 88, 12, 0.35);border-radius:10px;">
+
+                <label for="guest_phone"><strong>Telefone</strong></label>
+                <input id="guest_phone" name="guest_phone" type="tel" value="{{ guest_phone|default:'' }}"
+                    style="width:100%;margin-top:6px;padding:10px;border:1px solid rgba(234, 88, 12, 0.35);border-radius:10px;">
+            </div>
+            {% endif %}
+
+            {% if form_error %}
+            <div class="card">
+                <p>{{ form_error }}</p>
+            </div>
+            {% endif %}
+
+            <button class="btn btn-primary" type="submit">Confirmar</button>
+        </form>
+    </div>
+</body>
+
+</html>

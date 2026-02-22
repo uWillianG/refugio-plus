@@ -1,51 +1,150 @@
-﻿{% load static %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Refúgio Plus - Agendar</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <title>Refugio Plus - Agendar</title>
+    <link rel="stylesheet" href="{% static 'booking/css/style.css' %}">
 </head>
 
 <body>
     <div class="container fade-in">
         <header class="app-header">
-            <button class="btn-icon" onclick="history.back()">
+            <button class="btn-icon" onclick="history.back()" type="button">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <line x1="19" y1="12" x2="5" y2="12"></line>
                     <polyline points="12 19 5 12 12 5"></polyline>
                 </svg>
             </button>
-            <span class="header-title">Agendar um horário</span>
-            <div style="width: 44px;"></div> <!-- Spacer for centering -->
+            <span class="header-title">Agendar um horario</span>
+            <div style="width: 44px;"></div>
         </header>
 
-        <div class="date-selector">
-            <span class="current-date" id="currentDateDisplay">Carregando...</span>
-            <div class="calendar-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
+        <form id="dateForm" class="date-selector" method="get" action="{% url 'booking' %}">
+            <div>
+                <div class="text-secondary">Dia selecionado</div>
+                <span class="current-date">{{ selected_date_display }}</span>
             </div>
-        </div>
+
+            <div class="calendar-anchor">
+                <button id="datePickerButton" class="btn-icon calendar-icon" type="button" aria-label="Selecionar data"
+                    aria-expanded="false" aria-controls="dateCalendarPanel">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </button>
+
+                <input type="hidden" id="selectedDateInput" name="date" value="{{ selected_date_iso }}">
+
+                <div id="dateCalendarPanel" class="date-calendar" role="dialog" aria-label="Selecionar data" hidden>
+                    <div class="date-calendar-header">
+                        <button id="calendarPrevMonth" class="btn-icon date-calendar-nav" type="button"
+                            aria-label="Mes anterior">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <span id="calendarMonthLabel" class="date-calendar-month"></span>
+                        <button id="calendarNextMonth" class="btn-icon date-calendar-nav" type="button"
+                            aria-label="Proximo mes">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="date-calendar-weekdays">
+                        <span>Dom</span>
+                        <span>Seg</span>
+                        <span>Ter</span>
+                        <span>Qua</span>
+                        <span>Qui</span>
+                        <span>Sex</span>
+                        <span>Sab</span>
+                    </div>
+
+                    <div id="calendarDaysGrid" class="date-calendar-days"></div>
+                </div>
+            </div>
+        </form>
 
         <div id="courtsContainer">
-            <!-- Courts will be populated by JS -->
+            {% for court in courts %}
+            <article class="card court-card" data-court-id="{{ court.id }}" data-court-name="{{ court.name }}">
+                <div class="court-header">
+                    <div>
+                        <div class="court-name">{{ court.name }}</div>
+                        <div class="text-secondary">{{ court.description|default:"Quadra de areia" }}</div>
+                    </div>
+                </div>
+                <div class="court-time-grid"></div>
+            </article>
+            {% empty %}
+            <div class="card">
+                <p>Nenhuma quadra cadastrada.</p>
+            </div>
+            {% endfor %}
         </div>
-
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="toast">Agendamento confirmado!</div>
+    <div id="courtBookingModal" class="booking-modal" aria-hidden="true">
+        <div class="booking-modal-backdrop" data-close-modal="true"></div>
+        <div class="booking-modal-content">
+            <div class="booking-modal-header">
+                <div>
+                    <p id="modalCourtName" class="modal-court-name"></p>
+                    <p class="text-secondary" id="modalDateLabel">{{ selected_date_display }}</p>
+                    <p class="text-secondary" id="modalStartHourLabel"></p>
+                </div>
+                <button id="closeBookingModal" class="btn-icon modal-close-btn" type="button" aria-label="Fechar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
 
-    <script src="{% static 'js/script.js' %}"></script>
+            <form id="continueForm" method="get" action="{% url 'booking_confirmacao' %}">
+                <div class="modal-section">
+                    <label for="modalSportSelect" class="modal-section-title">Esporte</label>
+                    <select id="modalSportSelect" class="modal-select"></select>
+                </div>
+
+                <div class="modal-section">
+                    <p class="modal-section-title">Hora inicial</p>
+                    <div id="startHourGrid" class="option-list"></div>
+                </div>
+
+                <div class="modal-section">
+                    <p class="modal-section-title">Duração</p>
+                    <div id="durationOptions" class="option-list"></div>
+                </div>
+
+                <input type="hidden" id="inputCourtId" name="court">
+                <input type="hidden" id="inputSportId" name="sport">
+                <input type="hidden" id="inputDate" name="date" value="{{ selected_date_iso }}">
+                <input type="hidden" id="inputStartTime" name="start_time">
+                <input type="hidden" id="inputEndTime" name="end_time">
+
+                <button id="continueBookingBtn" class="btn btn-primary modal-continue-btn" type="submit"
+                    disabled>Continuar</button>
+            </form>
+        </div>
+    </div>
+
+    {{ sports|json_script:"sportsData" }}
+    {{ availability_map|json_script:"availabilityData" }}
+    <script src="{% static 'booking/js/script.js' %}"></script>
 </body>
 
 </html>

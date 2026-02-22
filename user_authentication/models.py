@@ -17,6 +17,11 @@ class UsuarioManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+class userTypes(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=150)
+    description = models.CharField(max_length=150, null=True, blank=True)
+    
 class users(AbstractBaseUser):
     id = models.AutoField(primary_key=True)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
@@ -25,6 +30,7 @@ class users(AbstractBaseUser):
     phone = models.BigIntegerField()
     email = models.CharField(max_length=150, unique=True)
     password = models.CharField(max_length=128)
+    user_type = models.ForeignKey(userTypes, on_delete=models.CASCADE, related_name='user_type', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
@@ -43,4 +49,3 @@ class users(AbstractBaseUser):
     def check_password(self, raw_password):
         return check_password(raw_password, self.password)
     
-

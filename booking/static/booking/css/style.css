@@ -260,6 +260,13 @@ a {
     color: var(--color-primary-yellow);
 }
 
+.court-time-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
 .time-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -268,12 +275,14 @@ a {
 }
 
 .time-slot {
+    width: 100%;
+    min-height: 38px;
     background: rgba(245, 158, 11, 0.05);
     border: 1px solid rgba(245, 158, 11, 0.2);
-    border-radius: 6px;
-    padding: 6px 2px;
+    border-radius: 10px;
+    padding: 8px 10px;
     text-align: center;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--color-text-dark);
     cursor: pointer;
     transition: all 0.2s ease;
@@ -294,6 +303,8 @@ a {
 .time-slot:hover.available {
     background: var(--color-primary-yellow);
     color: #FFFFFF;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25);
 }
 
 .time-slot.selected {
@@ -304,6 +315,19 @@ a {
 
 button.time-slot {
     font-family: inherit;
+}
+
+@media (max-width: 380px) {
+    .court-time-grid {
+        grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+        gap: 8px;
+    }
+
+    .time-slot {
+        min-height: 36px;
+        padding: 7px 8px;
+        font-size: 12px;
+    }
 }
 
 /* Booking Modal */
