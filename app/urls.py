@@ -3,7 +3,7 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from user_authentication.views import *
-from booking.views import BookingConfirmView, BookingView
+from booking.views import BookingConfirmView, BookingView, MyBookingsView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -18,4 +18,5 @@ urlpatterns = [
     path('menu/', MenuView.as_view(), name='menu'),
     path('booking/', BookingView.as_view(), name='booking'),
     path('booking/confirmacao/', BookingConfirmView.as_view(), name='booking_confirmacao'),
+    path('booking/meus-agendamentos/', MyBookingsView.as_view(), name='my_bookings'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

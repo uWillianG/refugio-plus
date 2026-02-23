@@ -1,6 +1,8 @@
 from datetime import date, datetime, time
 
 from django.contrib import messages
+from django.db.models import Q
+from django.urls import reverse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views import View
@@ -247,6 +249,8 @@ class BookingConfirmView(View):
             "guest_name": guest_name,
             "guest_phone": guest_phone,
             "form_error": form_error,
+            "success_message": "",
+            "success_redirect_url": "",
         }
 
     @staticmethod
@@ -297,5 +301,67 @@ class BookingConfirmView(View):
             user_phone=schedule_phone,
         )
 
-        messages.success(request, "Agendamento confirmado com sucesso.")
-        return redirect("booking")
+        success_redirect_url = reverse("my_bookings") if request.user.is_authenticated else reverse("menu")
+        context = BookingConfirmView._build_context(payload)
+        context["success_message"] = "Agendamento confirmado com sucesso."
+        context["success_redirect_url"] = success_redirect_url
+        return render(request, "booking-confirm.html", context)
+
+
+class MyBookingsView(View):
+    @staticmethod
+    def _context_for_user(request):
+        now = timezone.localtime()
+        today = now.date()
+        current_time = now.time().replace(microsecond=0)
+
+        current_filter = Q(date__gt=today) | Q(date=today, end_hour__gt=current_time)
+        past_filter = Q(date__lt=today) | Q(date=today, end_hour__lte=current_time)
+
+        base_queryset = schedules.objects.filter(user_id=request.user).select_related("court_id", "sport_id")
+
+        current_rows = base_queryset.filter(is_active=True).filter(current_filter).order_by("date", "start_hour")
+        past_rows = base_queryset.filter(Q(is_active=False) | past_filter).order_by("-date", "-start_hour")
+
+        return {
+            "current_bookings": current_rows,
+            "past_bookings": past_rows,
+        }
+
+    @staticmethod
+    def get(request):
+        if not request.user.is_authenticated:
+            return redirect("login")
+
+        context = MyBookingsView._context_for_user(request)
+        return render(request, "my-bookings.html", context)
+
+    @staticmethod
+    def post(request):
+        if not request.user.is_authenticated:
+            return redirect("login")
+
+        schedule_id = request.POST.get("schedule_id")
+        try:
+            schedule_id = int(schedule_id)
+        except (TypeError, ValueError):
+            messages.error(request, "Agendamento invalido.")
+            return redirect("my_bookings")
+
+        booking = schedules.objects.filter(
+            id=schedule_id,
+            user_id=request.user,
+            is_active=True,
+        ).first()
+
+        if not booking:
+            messages.error(request, "Nao foi possivel cancelar esse agendamento.")
+            return redirect("my_bookings")
+
+        booking.is_active = False
+        booking.cancelled_at = timezone.now()
+        booking.save(update_fields=["is_active", "cancelled_at", "updated_at"])
+
+        messages.success(request, "Horario cancelado com sucesso.")
+        context = MyBookingsView._context_for_user(request)
+        return render(request, "my-bookings.html", context)

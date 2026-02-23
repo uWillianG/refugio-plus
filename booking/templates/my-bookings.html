@@ -1,0 +1,198 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refugio Plus - Meus agendamentos</title>
+    <link rel="stylesheet" href="{% static 'booking/css/style.css' %}">
+</head>
+
+<body>
+    <div class="container fade-in">
+        <header class="app-header">
+            <button class="btn-icon" onclick="history.back()" type="button">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </button>
+            <span class="header-title">Meus agendamentos</span>
+            <div style="width: 44px;"></div>
+        </header>
+
+        <div class="bookings-filter-card">
+            <div class="bookings-radio-group">
+                <label class="bookings-radio-option" for="tab-current">
+                    <input id="tab-current" type="radio" name="bookings-tab" value="current" checked>
+                    <span class="radio-dot" aria-hidden="true"></span>
+                    <span class="radio-label">Atuais</span>
+                </label>
+                <label class="bookings-radio-option" for="tab-past">
+                    <input id="tab-past" type="radio" name="bookings-tab" value="past">
+                    <span class="radio-dot" aria-hidden="true"></span>
+                    <span class="radio-label">Passados</span>
+                </label>
+            </div>
+        </div>
+
+        <section id="current-bookings-section">
+            {% if messages %}
+            {% for message in messages %}
+            <div class="card">
+                <p>{{ message }}</p>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% for booking in current_bookings %}
+            <article class="card booking-item-card">
+                <p class="booking-item-title">{{ booking.court_id.name }}</p>
+                <p class="text-secondary">{{ booking.sport_id.name }}</p>
+                <p class="booking-item-meta"><strong>Data:</strong> {{ booking.date|date:"d/m/Y" }}</p>
+                <p class="booking-item-meta"><strong>Horario:</strong> {{ booking.start_hour|time:"H:i" }} - {{ booking.end_hour|time:"H:i" }}</p>
+                <form method="post" class="cancel-booking-form" data-cancel-form>
+                    {% csrf_token %}
+                    <input type="hidden" name="schedule_id" value="{{ booking.id }}">
+                    <button type="button" class="cancel-booking-btn" data-open-cancel-modal>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                        <span>Cancelar horario</span>
+                    </button>
+                </form>
+            </article>
+            {% empty %}
+            <div class="card">
+                <p>Voce nao possui agendamentos atuais.</p>
+            </div>
+            {% endfor %}
+        </section>
+
+        <section id="past-bookings-section" hidden>
+            {% for booking in past_bookings %}
+            <article class="card booking-item-card">
+                {% if booking.is_active %}
+                <span class="booking-status-label completed">Concluido</span>
+                {% else %}
+                <span class="booking-status-label canceled">Cancelado</span>
+                {% endif %}
+                <p class="booking-item-title">{{ booking.court_id.name }}</p>
+                <p class="text-secondary">{{ booking.sport_id.name }}</p>
+                <p class="booking-item-meta"><strong>Data:</strong> {{ booking.date|date:"d/m/Y" }}</p>
+                <p class="booking-item-meta"><strong>Horario:</strong> {{ booking.start_hour|time:"H:i" }} - {{ booking.end_hour|time:"H:i" }}</p>
+            </article>
+            {% empty %}
+            <div class="card">
+                <p>Voce ainda nao possui agendamentos passados.</p>
+            </div>
+            {% endfor %}
+        </section>
+    </div>
+
+    <div id="cancelBookingModal" class="booking-modal" aria-hidden="true">
+        <div class="booking-modal-backdrop" data-close-cancel-modal="true"></div>
+        <div class="booking-modal-content cancel-booking-modal-content">
+            <div class="booking-modal-header cancel-booking-modal-header">
+                <div class="cancel-modal-title-wrap">
+                    <span class="cancel-modal-icon" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <circle cx="12" cy="17" r="1"></circle>
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        </svg>
+                    </span>
+                    <p class="modal-court-name cancel-modal-title">Cancelar horario</p>
+                </div>
+                <button id="closeCancelModal" class="btn-icon modal-close-btn" type="button" aria-label="Fechar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <p class="cancel-modal-message">Tem certeza que deseja cancelar este agendamento?</p>
+            <div class="cancel-modal-actions">
+                <button id="keepBookingBtn" type="button" class="btn btn-secondary cancel-modal-btn cancel-modal-btn-neutral">Voltar</button>
+                <button id="confirmCancelBtn" type="button" class="btn btn-primary cancel-modal-btn cancel-modal-btn-danger">Confirmar cancelamento</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const currentRadio = document.getElementById('tab-current');
+            const pastRadio = document.getElementById('tab-past');
+            const currentSection = document.getElementById('current-bookings-section');
+            const pastSection = document.getElementById('past-bookings-section');
+
+            function syncTabVisibility() {
+                const showCurrent = currentRadio.checked;
+                currentSection.hidden = !showCurrent;
+                pastSection.hidden = showCurrent;
+            }
+
+            currentRadio.addEventListener('change', syncTabVisibility);
+            pastRadio.addEventListener('change', syncTabVisibility);
+            syncTabVisibility();
+
+            const modal = document.getElementById('cancelBookingModal');
+            const closeModalBtn = document.getElementById('closeCancelModal');
+            const keepBookingBtn = document.getElementById('keepBookingBtn');
+            const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+            let pendingCancelForm = null;
+
+            function openModal(form) {
+                pendingCancelForm = form;
+                modal.classList.add('open');
+                modal.setAttribute('aria-hidden', 'false');
+            }
+
+            function closeModal() {
+                pendingCancelForm = null;
+                modal.classList.remove('open');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            document.querySelectorAll('[data-open-cancel-modal]').forEach((button) => {
+                button.addEventListener('click', function () {
+                    const form = button.closest('[data-cancel-form]');
+                    if (form) {
+                        openModal(form);
+                    }
+                });
+            });
+
+            document.querySelectorAll('[data-close-cancel-modal="true"]').forEach((node) => {
+                node.addEventListener('click', closeModal);
+            });
+
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', closeModal);
+            }
+
+            if (keepBookingBtn) {
+                keepBookingBtn.addEventListener('click', closeModal);
+            }
+
+            if (confirmCancelBtn) {
+                confirmCancelBtn.addEventListener('click', function () {
+                    if (pendingCancelForm) {
+                        pendingCancelForm.submit();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
+
+

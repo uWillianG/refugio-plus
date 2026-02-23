@@ -596,6 +596,293 @@ button.time-slot {
 .toast.show {
     transform: translateX(-50%) translateY(0);
 }
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toast-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.toast-success {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+}
+
+.confirm-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--color-text-dark);
+}
+
+.confirm-input {
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 10px;
+    border: 1px solid rgba(234, 88, 12, 0.35);
+    border-radius: 10px;
+    font: inherit;
+}
+
+.confirm-input:focus {
+    outline: none;
+    border-color: var(--color-primary-yellow);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.confirm-error {
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+.bookings-filter-card {
+    padding: 12px;
+}
+
+.bookings-radio-group {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+}
+
+.bookings-radio-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.bookings-radio-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.radio-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid rgba(234, 88, 12, 0.6);
+    background: #ffffff;
+    display: inline-block;
+    position: relative;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.radio-dot::after {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-warm-orange);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.2);
+    opacity: 0;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.radio-label {
+    font-weight: 600;
+    color: var(--color-text-dark);
+}
+
+.bookings-radio-option input:checked + .radio-dot {
+    border-color: var(--color-warm-orange);
+    box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.14);
+}
+
+.bookings-radio-option input:checked + .radio-dot::after {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.booking-item-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 14px 12px 14px;
+    border: 1px solid rgba(234, 88, 12, 0.26);
+    border-left: 4px solid var(--color-primary-yellow);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fffef8 0%, #ffffff 100%);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);
+}
+
+.booking-item-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(245, 158, 11, 0.18);
+}
+
+.booking-item-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--color-primary-yellow);
+    line-height: 1.2;
+}
+
+.booking-item-card .text-secondary {
+    font-size: 12px;
+    font-weight: 600;
+    color: #7c3d08;
+    margin-bottom: 2px;
+}
+
+.booking-item-meta {
+    font-size: 13px;
+    color: var(--color-text-dark);
+    line-height: 1.35;
+}
+
+.booking-item-meta strong {
+    color: var(--color-text-secondary);
+    margin-right: 4px;
+}
+
+.booking-status-label {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.booking-status-label.completed {
+    background: rgba(22, 163, 74, 0.12);
+    color: #166534;
+    border: 1px solid rgba(22, 163, 74, 0.35);
+}
+
+.booking-status-label.canceled {
+    background: rgba(220, 38, 38, 0.1);
+    color: #b91c1c;
+    border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.cancel-booking-form {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(234, 88, 12, 0.24);
+}
+
+.cancel-booking-btn {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid #dc2626;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #dc2626;
+    font: inherit;
+    font-weight: 600;
+    padding: 9px 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancel-booking-btn:hover {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+#cancelBookingModal .booking-modal-backdrop {
+    background: rgba(17, 24, 39, 0.54);
+    backdrop-filter: blur(2px);
+}
+
+.cancel-booking-modal-content {
+    max-width: 430px;
+    margin: 0 10px 14px 10px;
+    border-radius: 18px;
+    border: 1px solid rgba(234, 88, 12, 0.2);
+    background: linear-gradient(180deg, #fffdf7 0%, #ffffff 100%);
+    box-shadow: 0 20px 42px rgba(17, 24, 39, 0.2), 0 8px 22px rgba(245, 158, 11, 0.16);
+    padding: 18px 16px 16px 16px;
+}
+
+.cancel-booking-modal-header {
+    margin-bottom: 10px;
+}
+
+.cancel-modal-title-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cancel-modal-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #b91c1c;
+    background: rgba(220, 38, 38, 0.12);
+    border: 1px solid rgba(220, 38, 38, 0.24);
+}
+
+.cancel-modal-title {
+    font-size: 18px;
+    color: #9a3412;
+    line-height: 1.2;
+}
+
+.cancel-modal-message {
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--color-text-secondary);
+    margin-bottom: 2px;
+}
+
+.cancel-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.cancel-modal-btn {
+    margin-bottom: 0;
+    min-height: 42px;
+    border-radius: 12px;
+    text-transform: none;
+    letter-spacing: 0;
+    padding: 10px 12px;
+}
+
+.cancel-modal-btn-neutral {
+    border-color: rgba(107, 114, 128, 0.35);
+    color: #374151;
+}
+
+.cancel-modal-btn-neutral:hover {
+    background: #f3f4f6;
+    border-color: rgba(107, 114, 128, 0.6);
+}
+
+.cancel-modal-btn-danger {
+    border: 1px solid #dc2626;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 6px 14px rgba(220, 38, 38, 0.28);
+}
+
+.cancel-modal-btn-danger:hover {
+    background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+    box-shadow: 0 8px 18px rgba(220, 38, 38, 0.32);
+}
 /* New Calendar */
 .calendar-anchor {
     position: relative;

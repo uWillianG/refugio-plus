@@ -33,14 +33,7 @@
             <p><strong>Horario:</strong> {{ selected_start_time }} - {{ selected_end_time }}</p>
         </div>
 
-        {% if messages %}
-            {% for message in messages %}
-            <div class="card">
-                <p>{{ message }}</p>
-            </div>
-            {% endfor %}
-        {% endif %}
-
+        {% if not success_message %}
         <form method="post">
             {% csrf_token %}
             <input type="hidden" name="court" value="{{ selected_court_id }}">
@@ -51,25 +44,80 @@
 
             {% if not request.user.is_authenticated %}
             <div class="card">
-                <label for="guest_name"><strong>Nome</strong></label>
-                <input id="guest_name" name="guest_name" type="text" value="{{ guest_name|default:'' }}"
-                    style="width:100%;margin-top:6px;margin-bottom:12px;padding:10px;border:1px solid rgba(234, 88, 12, 0.35);border-radius:10px;">
+                <label for="guest_name" class="confirm-label"><strong>Nome</strong></label>
+                <input id="guest_name" class="confirm-input" name="guest_name" type="text" value="{{ guest_name|default:'' }}">
 
-                <label for="guest_phone"><strong>Telefone</strong></label>
-                <input id="guest_phone" name="guest_phone" type="tel" value="{{ guest_phone|default:'' }}"
-                    style="width:100%;margin-top:6px;padding:10px;border:1px solid rgba(234, 88, 12, 0.35);border-radius:10px;">
+                <label for="phone" class="confirm-label"><strong>Telefone</strong></label>
+                <input id="phone" class="confirm-input" name="guest_phone" type="tel" maxlength="15" placeholder="(00) 00000-0000"
+                    value="{{ guest_phone|default:'' }}">
             </div>
             {% endif %}
 
             {% if form_error %}
             <div class="card">
-                <p>{{ form_error }}</p>
+                <p class="confirm-error">{{ form_error }}</p>
             </div>
             {% endif %}
 
             <button class="btn btn-primary" type="submit">Confirmar</button>
         </form>
+        {% endif %}
     </div>
+
+    {% if success_message %}
+    <div id="toast-notification-success" class="toast toast-success" data-redirect-url="{{ success_redirect_url }}">
+        <div class="toast-content">
+            <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <span>{{ success_message }}</span>
+        </div>
+    </div>
+    {% endif %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const successToast = document.getElementById('toast-notification-success');
+            if (successToast) {
+                setTimeout(() => {
+                    successToast.classList.add('show');
+                }, 100);
+
+                setTimeout(() => {
+                    const redirectUrl = successToast.getAttribute('data-redirect-url');
+                    if (redirectUrl) {
+                        window.location = redirectUrl;
+                    }
+                }, 2500);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const phoneInput = document.getElementById('phone');
+
+            function formatPhone(value) {
+                const digits = value.replace(/\D/g, '').slice(0, 11);
+                if (digits.length <= 10) {
+                    return digits
+                        .replace(/^(\d{2})(\d)/, '($1) $2')
+                        .replace(/(\d{4})(\d)/, '$1-$2');
+                }
+
+                return digits
+                    .replace(/^(\d{2})(\d)/, '($1) $2')
+                    .replace(/(\d{5})(\d)/, '$1-$2');
+            }
+
+            if (phoneInput) {
+                phoneInput.value = formatPhone(phoneInput.value);
+                phoneInput.addEventListener('input', function (event) {
+                    event.target.value = formatPhone(event.target.value);
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>
