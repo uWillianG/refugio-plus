@@ -15,6 +15,8 @@ class BookingRules:
     WEEKEND_OPEN_HOUR = 8
     CLOSE_HOUR = 23
     MAX_DURATION_HOURS = 3
+    WEEKDAY_PRICE = 80
+    WEEKEND_OR_HOLIDAY_PRICE = 95
     HOLIDAYS = set()
 
     @classmethod
@@ -34,6 +36,12 @@ class BookingRules:
             return True
         return holidays.objects.filter(dates=selected_date).exists()
 
+    @classmethod
+    def price_for_date(cls, selected_date):
+        if cls.is_holiday(selected_date) or selected_date.weekday() >= 5:
+            return cls.WEEKEND_OR_HOLIDAY_PRICE
+        return cls.WEEKDAY_PRICE
+
 
 def parse_selected_date(raw_date):
     if not raw_date:
@@ -46,6 +54,23 @@ def parse_selected_date(raw_date):
 
 def format_hour(hour_value):
     return f"{hour_value:02d}:00"
+
+
+def format_price_brl(price_value):
+    return f"R$ {price_value},00"
+
+
+def calculate_duration_hours(start_hour, end_hour):
+    duration = end_hour - start_hour
+    if duration < 1:
+        return 1
+    return duration
+
+
+def booking_total_price(selected_date, start_hour, end_hour):
+    base_price = BookingRules.price_for_date(selected_date)
+    duration_hours = calculate_duration_hours(start_hour, end_hour)
+    return base_price * duration_hours
 
 
 def resolve_block_model():
@@ -237,6 +262,11 @@ class BookingConfirmView(View):
 
     @staticmethod
     def _build_context(payload, guest_name="", guest_phone="", form_error=""):
+        booking_price = booking_total_price(
+            payload["selected_date"],
+            payload["start_hour"],
+            payload["end_hour"],
+        )
         return {
             "selected_date_display": payload["selected_date"].strftime("%d/%m/%Y"),
             "selected_date_iso": payload["date_iso"],
@@ -246,6 +276,7 @@ class BookingConfirmView(View):
             "selected_sport_name": payload["sport_obj"].name,
             "selected_start_time": format_hour(payload["start_hour"]),
             "selected_end_time": format_hour(payload["end_hour"]),
+            "booking_price_display": format_price_brl(booking_price),
             "guest_name": guest_name,
             "guest_phone": guest_phone,
             "form_error": form_error,
@@ -310,6 +341,16 @@ class BookingConfirmView(View):
 
 class MyBookingsView(View):
     @staticmethod
+    def _attach_price_display(rows):
+        for row in rows:
+            start_hour = row.start_hour.hour
+            end_hour = row.end_hour.hour
+            row.booking_price_display = format_price_brl(
+                booking_total_price(row.date, start_hour, end_hour)
+            )
+        return rows
+
+    @staticmethod
     def _context_for_user(request):
         now = timezone.localtime()
         today = now.date()
@@ -320,12 +361,16 @@ class MyBookingsView(View):
 
         base_queryset = schedules.objects.filter(user_id=request.user).select_related("court_id", "sport_id")
 
-        current_rows = base_queryset.filter(is_active=True).filter(current_filter).order_by("date", "start_hour")
-        past_rows = base_queryset.filter(Q(is_active=False) | past_filter).order_by("-date", "-start_hour")
+        current_rows = list(
+            base_queryset.filter(is_active=True).filter(current_filter).order_by("date", "start_hour")
+        )
+        past_rows = list(
+            base_queryset.filter(Q(is_active=False) | past_filter).order_by("-date", "-start_hour")
+        )
 
         return {
-            "current_bookings": current_rows,
-            "past_bookings": past_rows,
+            "current_bookings": MyBookingsView._attach_price_display(current_rows),
+            "past_bookings": MyBookingsView._attach_price_display(past_rows),
         }
 
     @staticmethod
@@ -365,3 +410,166 @@ class MyBookingsView(View):
         messages.success(request, "Horario cancelado com sucesso.")
         context = MyBookingsView._context_for_user(request)
         return render(request, "my-bookings.html", context)
+
+
+class AdminBookingsView(View):
+    @staticmethod
+    def _user_is_admin(request):
+        return request.user.is_authenticated and getattr(request.user, "is_admin", False)
+
+    @staticmethod
+    def _attach_price_display(rows):
+        for row in rows:
+            start_hour = row.start_hour.hour
+            end_hour = row.end_hour.hour
+            row.booking_price_display = format_price_brl(
+                booking_total_price(row.date, start_hour, end_hour)
+            )
+        return rows
+
+    @staticmethod
+    def _attach_customer_display(rows):
+        for row in rows:
+            if row.user_name:
+                row.customer_display = row.user_name
+            elif row.user_id:
+                row.customer_display = row.user_id.name
+            else:
+                row.customer_display = "Nao informado"
+        return rows
+
+    @staticmethod
+    def _parse_optional_int(value):
+        try:
+            parsed = int(value)
+            if parsed <= 0:
+                return None
+            return parsed
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _apply_sport_and_court_filters(queryset, sport_id=None, court_id=None):
+        filtered = queryset
+        if sport_id:
+            filtered = filtered.filter(sport_id_id=sport_id)
+        if court_id:
+            filtered = filtered.filter(court_id_id=court_id)
+        return filtered
+
+    @staticmethod
+    def _normalize_tab(tab_value):
+        if tab_value == "past":
+            return "past"
+        return "current"
+
+    @staticmethod
+    def _context(selected_date, sport_id=None, court_id=None, selected_tab="current"):
+        now = timezone.localtime()
+        today = now.date()
+        current_time = now.time().replace(microsecond=0)
+
+        current_filter = Q(date__gt=today) | Q(date=today, end_hour__gt=current_time)
+        past_filter = Q(date__lt=today) | Q(date=today, end_hour__lte=current_time)
+
+        base_queryset = schedules.objects.select_related("court_id", "sport_id", "user_id")
+        selected_date_queryset = base_queryset.filter(date=selected_date)
+        selected_date_queryset = AdminBookingsView._apply_sport_and_court_filters(
+            selected_date_queryset, sport_id=sport_id, court_id=court_id
+        )
+        past_queryset = AdminBookingsView._apply_sport_and_court_filters(
+            base_queryset, sport_id=sport_id, court_id=court_id
+        )
+
+        current_rows = list(
+            selected_date_queryset.filter(is_active=True).filter(current_filter).order_by("date", "start_hour")
+        )
+        past_rows = list(
+            past_queryset.filter(Q(is_active=False) | past_filter).order_by("-date", "-start_hour")
+        )
+
+        current_rows = AdminBookingsView._attach_price_display(current_rows)
+        past_rows = AdminBookingsView._attach_price_display(past_rows)
+        current_rows = AdminBookingsView._attach_customer_display(current_rows)
+        past_rows = AdminBookingsView._attach_customer_display(past_rows)
+
+        return {
+            "current_bookings": current_rows,
+            "past_bookings": past_rows,
+            "selected_date_iso": selected_date.isoformat(),
+            "selected_date_display": selected_date.strftime("%d/%m/%Y"),
+            "sports": sports.objects.values("id", "name").order_by("name"),
+            "courts": courts.objects.values("id", "name").order_by("name"),
+            "selected_sport_id": sport_id or "",
+            "selected_court_id": court_id or "",
+            "selected_tab": AdminBookingsView._normalize_tab(selected_tab),
+        }
+
+    @staticmethod
+    def get(request):
+        if not request.user.is_authenticated:
+            return redirect("login")
+
+        if not AdminBookingsView._user_is_admin(request):
+            messages.error(request, "Acesso restrito a administradores.")
+            return redirect("menu")
+
+        selected_date = parse_selected_date(request.GET.get("date"))
+        selected_sport_id = AdminBookingsView._parse_optional_int(request.GET.get("sport"))
+        selected_court_id = AdminBookingsView._parse_optional_int(request.GET.get("court"))
+        selected_tab = AdminBookingsView._normalize_tab(request.GET.get("tab"))
+        context = AdminBookingsView._context(
+            selected_date,
+            sport_id=selected_sport_id,
+            court_id=selected_court_id,
+            selected_tab=selected_tab,
+        )
+        return render(request, "admin-bookings.html", context)
+
+    @staticmethod
+    def post(request):
+        if not request.user.is_authenticated:
+            return redirect("login")
+
+        if not AdminBookingsView._user_is_admin(request):
+            messages.error(request, "Acesso restrito a administradores.")
+            return redirect("menu")
+
+        selected_date = parse_selected_date(request.POST.get("date"))
+        selected_sport_id = AdminBookingsView._parse_optional_int(request.POST.get("sport"))
+        selected_court_id = AdminBookingsView._parse_optional_int(request.POST.get("court"))
+        selected_tab = AdminBookingsView._normalize_tab(request.POST.get("tab"))
+        schedule_id = request.POST.get("schedule_id")
+        try:
+            schedule_id = int(schedule_id)
+        except (TypeError, ValueError):
+            messages.error(request, "Agendamento invalido.")
+            return redirect(
+                f"{reverse('admin_bookings')}?date={selected_date.isoformat()}"
+                f"&sport={selected_sport_id or ''}&court={selected_court_id or ''}&tab={selected_tab}"
+            )
+
+        booking = schedules.objects.filter(
+            id=schedule_id,
+            is_active=True,
+        ).first()
+
+        if not booking:
+            messages.error(request, "Nao foi possivel cancelar esse agendamento.")
+            return redirect(
+                f"{reverse('admin_bookings')}?date={selected_date.isoformat()}"
+                f"&sport={selected_sport_id or ''}&court={selected_court_id or ''}&tab={selected_tab}"
+            )
+
+        booking.is_active = False
+        booking.cancelled_at = timezone.now()
+        booking.save(update_fields=["is_active", "cancelled_at", "updated_at"])
+
+        messages.success(request, "Horario cancelado com sucesso.")
+        context = AdminBookingsView._context(
+            selected_date,
+            sport_id=selected_sport_id,
+            court_id=selected_court_id,
+            selected_tab=selected_tab,
+        )
+        return render(request, "admin-bookings.html", context)
