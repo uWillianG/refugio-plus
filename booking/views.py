@@ -1,4 +1,5 @@
 from datetime import date, datetime, time
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.db.models import Q
@@ -458,16 +459,37 @@ class AdminBookingsView(View):
         return filtered
 
     @staticmethod
+    def _apply_customer_filter(queryset, customer_name=""):
+        normalized_name = (customer_name or "").strip()
+        if not normalized_name:
+            return queryset
+        return queryset.filter(
+            Q(user_name__icontains=normalized_name) | Q(user_id__name__icontains=normalized_name)
+        )
+
+    @staticmethod
     def _normalize_tab(tab_value):
         if tab_value == "past":
             return "past"
         return "current"
 
     @staticmethod
-    def _context(selected_date, sport_id=None, court_id=None, selected_tab="current"):
+    def _build_redirect_url(selected_date, sport_id=None, court_id=None, selected_tab="current", customer_name=""):
+        query_params = {
+            "date": selected_date.isoformat(),
+            "sport": sport_id or "",
+            "court": court_id or "",
+            "tab": AdminBookingsView._normalize_tab(selected_tab),
+            "customer": (customer_name or "").strip(),
+        }
+        return f"{reverse('admin_bookings')}?{urlencode(query_params)}"
+
+    @staticmethod
+    def _context(selected_date, sport_id=None, court_id=None, selected_tab="current", customer_name=""):
         now = timezone.localtime()
         today = now.date()
         current_time = now.time().replace(microsecond=0)
+        normalized_tab = AdminBookingsView._normalize_tab(selected_tab)
 
         current_filter = Q(date__gt=today) | Q(date=today, end_hour__gt=current_time)
         past_filter = Q(date__lt=today) | Q(date=today, end_hour__lte=current_time)
@@ -477,16 +499,28 @@ class AdminBookingsView(View):
         selected_date_queryset = AdminBookingsView._apply_sport_and_court_filters(
             selected_date_queryset, sport_id=sport_id, court_id=court_id
         )
+        selected_date_queryset = AdminBookingsView._apply_customer_filter(
+            selected_date_queryset, customer_name=customer_name
+        )
         past_queryset = AdminBookingsView._apply_sport_and_court_filters(
             base_queryset, sport_id=sport_id, court_id=court_id
         )
+        past_queryset = AdminBookingsView._apply_customer_filter(
+            past_queryset, customer_name=customer_name
+        )
 
-        current_rows = list(
-            selected_date_queryset.filter(is_active=True).filter(current_filter).order_by("date", "start_hour")
-        )
-        past_rows = list(
-            past_queryset.filter(Q(is_active=False) | past_filter).order_by("-date", "-start_hour")
-        )
+        current_rows = []
+        past_rows = []
+
+        # Lazy-load: query only the tab that is currently selected.
+        if normalized_tab == "current":
+            current_rows = list(
+                selected_date_queryset.filter(is_active=True).filter(current_filter).order_by("date", "start_hour")
+            )
+        else:
+            past_rows = list(
+                past_queryset.filter(Q(is_active=False) | past_filter).order_by("-date", "-start_hour")
+            )
 
         current_rows = AdminBookingsView._attach_price_display(current_rows)
         past_rows = AdminBookingsView._attach_price_display(past_rows)
@@ -502,7 +536,8 @@ class AdminBookingsView(View):
             "courts": courts.objects.values("id", "name").order_by("name"),
             "selected_sport_id": sport_id or "",
             "selected_court_id": court_id or "",
-            "selected_tab": AdminBookingsView._normalize_tab(selected_tab),
+            "selected_tab": normalized_tab,
+            "selected_customer_name": (customer_name or "").strip(),
         }
 
     @staticmethod
@@ -518,11 +553,13 @@ class AdminBookingsView(View):
         selected_sport_id = AdminBookingsView._parse_optional_int(request.GET.get("sport"))
         selected_court_id = AdminBookingsView._parse_optional_int(request.GET.get("court"))
         selected_tab = AdminBookingsView._normalize_tab(request.GET.get("tab"))
+        customer_name = request.GET.get("customer", "")
         context = AdminBookingsView._context(
             selected_date,
             sport_id=selected_sport_id,
             court_id=selected_court_id,
             selected_tab=selected_tab,
+            customer_name=customer_name,
         )
         return render(request, "admin-bookings.html", context)
 
@@ -539,14 +576,20 @@ class AdminBookingsView(View):
         selected_sport_id = AdminBookingsView._parse_optional_int(request.POST.get("sport"))
         selected_court_id = AdminBookingsView._parse_optional_int(request.POST.get("court"))
         selected_tab = AdminBookingsView._normalize_tab(request.POST.get("tab"))
+        customer_name = request.POST.get("customer", "")
         schedule_id = request.POST.get("schedule_id")
         try:
             schedule_id = int(schedule_id)
         except (TypeError, ValueError):
             messages.error(request, "Agendamento invalido.")
             return redirect(
-                f"{reverse('admin_bookings')}?date={selected_date.isoformat()}"
-                f"&sport={selected_sport_id or ''}&court={selected_court_id or ''}&tab={selected_tab}"
+                AdminBookingsView._build_redirect_url(
+                    selected_date,
+                    sport_id=selected_sport_id,
+                    court_id=selected_court_id,
+                    selected_tab=selected_tab,
+                    customer_name=customer_name,
+                )
             )
 
         booking = schedules.objects.filter(
@@ -557,8 +600,13 @@ class AdminBookingsView(View):
         if not booking:
             messages.error(request, "Nao foi possivel cancelar esse agendamento.")
             return redirect(
-                f"{reverse('admin_bookings')}?date={selected_date.isoformat()}"
-                f"&sport={selected_sport_id or ''}&court={selected_court_id or ''}&tab={selected_tab}"
+                AdminBookingsView._build_redirect_url(
+                    selected_date,
+                    sport_id=selected_sport_id,
+                    court_id=selected_court_id,
+                    selected_tab=selected_tab,
+                    customer_name=customer_name,
+                )
             )
 
         booking.is_active = False
@@ -571,5 +619,6 @@ class AdminBookingsView(View):
             sport_id=selected_sport_id,
             court_id=selected_court_id,
             selected_tab=selected_tab,
+            customer_name=customer_name,
         )
         return render(request, "admin-bookings.html", context)

@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="{% static 'booking/css/style.css' %}">
 </head>
 
-<body>
-    <div class="container fade-in">
-        <header class="app-header">
+<body class="admin-bookings-page">
+    <div class="container fade-in admin-bookings-container">
+        <header class="app-header admin-bookings-header">
             <button class="btn-icon" onclick="history.back()" type="button">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -19,84 +19,121 @@
                     <polyline points="12 19 5 12 12 5"></polyline>
                 </svg>
             </button>
-            <span class="header-title">Todos os agendamentos</span>
+            <span class="header-title admin-bookings-title">Agendamentos</span>
             <div style="width: 44px;"></div>
         </header>
 
-        <form id="dateForm" class="date-selector" method="get" action="{% url 'admin_bookings' %}">
-            <div>
-                <div class="text-secondary">Dia selecionado</div>
-                <span class="current-date">{{ selected_date_display }}</span>
-            </div>
-
-            <div class="calendar-anchor">
-                <button id="datePickerButton" class="btn-icon calendar-icon" type="button" aria-label="Selecionar data"
-                    aria-expanded="false" aria-controls="dateCalendarPanel">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                </button>
-
-                <input type="hidden" id="selectedDateInput" name="date" value="{{ selected_date_iso }}">
+        <section class="admin-controls-premium" aria-label="Controles de agendamento">
+            <form id="customerSearchForm" method="get" action="{% url 'admin_bookings' %}"
+                class="bookings-filter-card admin-search-form">
+                <input type="hidden" name="date" value="{{ selected_date_iso }}">
                 <input type="hidden" name="sport" value="{{ selected_sport_id }}">
                 <input type="hidden" name="court" value="{{ selected_court_id }}">
-                <input type="hidden" id="dateFormTabInput" name="tab" value="{{ selected_tab }}">
+                <input type="hidden" id="searchFormTabInput" name="tab" value="{{ selected_tab }}">
+                <div class="admin-search-input-wrap">
+                    <span class="admin-search-input-icon" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </span>
+                    <input type="text" id="customerSearchInput" name="customer" class="confirm-input admin-search-input"
+                        placeholder="Pesquisar cliente" value="{{ selected_customer_name }}">
+                </div>
+                <button type="submit" class="btn btn-secondary admin-icon-btn admin-search-btn"
+                    aria-label="Buscar cliente" title="Buscar cliente">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </button>
+            </form>
 
-                <div id="dateCalendarPanel" class="date-calendar" role="dialog" aria-label="Selecionar data" hidden>
-                    <div class="date-calendar-header">
-                        <button id="calendarPrevMonth" class="btn-icon date-calendar-nav" type="button"
-                            aria-label="Mes anterior">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="15 18 9 12 15 6"></polyline>
-                            </svg>
-                        </button>
-                        <span id="calendarMonthLabel" class="date-calendar-month"></span>
-                        <button id="calendarNextMonth" class="btn-icon date-calendar-nav" type="button"
-                            aria-label="Proximo mes">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg>
-                        </button>
+            <div class="bookings-filter-card admin-toolbar-card">
+                <div class="admin-toolbar-row">
+                    <div class="bookings-radio-group">
+                        <label class="bookings-radio-option" for="tab-current">
+                            <input id="tab-current" type="radio" name="bookings-tab" value="current" {% if selected_tab != "past" %}checked{% endif %}>
+                            <span class="radio-dot" aria-hidden="true"></span>
+                            <span class="radio-label">Atuais</span>
+                        </label>
+                        <label class="bookings-radio-option" for="tab-past">
+                            <input id="tab-past" type="radio" name="bookings-tab" value="past" {% if selected_tab == "past" %}checked{% endif %}>
+                            <span class="radio-dot" aria-hidden="true"></span>
+                            <span class="radio-label">Passados</span>
+                        </label>
                     </div>
-
-                    <div class="date-calendar-weekdays">
-                        <span>Dom</span>
-                        <span>Seg</span>
-                        <span>Ter</span>
-                        <span>Qua</span>
-                        <span>Qui</span>
-                        <span>Sex</span>
-                        <span>Sab</span>
-                    </div>
-
-                    <div id="calendarDaysGrid" class="date-calendar-days"></div>
+                    <button id="openFiltersModalBtn" type="button"
+                        class="btn btn-secondary admin-icon-btn admin-filter-btn" aria-label="Filtrar agendamentos"
+                        title="Filtrar agendamentos">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                        </svg>
+                    </button>
                 </div>
             </div>
-        </form>
 
-        <div class="bookings-filter-card">
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-                <div class="bookings-radio-group">
-                    <label class="bookings-radio-option" for="tab-current">
-                        <input id="tab-current" type="radio" name="bookings-tab" value="current" {% if selected_tab != "past" %}checked{% endif %}>
-                        <span class="radio-dot" aria-hidden="true"></span>
-                        <span class="radio-label">Atuais</span>
-                    </label>
-                    <label class="bookings-radio-option" for="tab-past">
-                        <input id="tab-past" type="radio" name="bookings-tab" value="past" {% if selected_tab == "past" %}checked{% endif %}>
-                        <span class="radio-dot" aria-hidden="true"></span>
-                        <span class="radio-label">Passados</span>
-                    </label>
+            <form id="dateForm" class="date-selector admin-date-selector" method="get"
+                action="{% url 'admin_bookings' %}">
+                <div>
+                    <span class="current-date">{{ selected_date_display }}</span>
                 </div>
-                <button id="openFiltersModalBtn" type="button" class="btn btn-secondary">Filtrar</button>
-            </div>
-        </div>
+
+                <div class="calendar-anchor">
+                    <button id="datePickerButton" class="btn-icon calendar-icon" type="button"
+                        aria-label="Selecionar data" aria-expanded="false" aria-controls="dateCalendarPanel">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </button>
+
+                    <input type="hidden" id="selectedDateInput" name="date" value="{{ selected_date_iso }}">
+                    <input type="hidden" name="sport" value="{{ selected_sport_id }}">
+                    <input type="hidden" name="court" value="{{ selected_court_id }}">
+                    <input type="hidden" id="dateFormTabInput" name="tab" value="{{ selected_tab }}">
+                    <input type="hidden" name="customer" value="{{ selected_customer_name }}">
+
+                    <div id="dateCalendarPanel" class="date-calendar" role="dialog" aria-label="Selecionar data" hidden>
+                        <div class="date-calendar-header">
+                            <button id="calendarPrevMonth" class="btn-icon date-calendar-nav" type="button"
+                                aria-label="Mes anterior">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
+                            </button>
+                            <span id="calendarMonthLabel" class="date-calendar-month"></span>
+                            <button id="calendarNextMonth" class="btn-icon date-calendar-nav" type="button"
+                                aria-label="Proximo mes">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="date-calendar-weekdays">
+                            <span>Dom</span>
+                            <span>Seg</span>
+                            <span>Ter</span>
+                            <span>Qua</span>
+                            <span>Qui</span>
+                            <span>Sex</span>
+                            <span>Sab</span>
+                        </div>
+
+                        <div id="calendarDaysGrid" class="date-calendar-days"></div>
+                    </div>
+                </div>
+            </form>
+        </section>
 
         <section id="current-bookings-section">
             {% if messages %}
@@ -108,13 +145,14 @@
             {% endif %}
 
             {% for booking in current_bookings %}
-            <article class="card booking-item-card">
+            <article class="card booking-item-card" data-booking-card>
                 <p class="booking-item-title">{{ booking.court_id.name }}</p>
                 <p class="text-secondary">{{ booking.sport_id.name }}</p>
-                <p class="booking-item-meta"><strong>Cliente:</strong> {{ booking.customer_display }}</p>
+                <p class="booking-item-meta"><strong>Cliente:</strong> <span class="booking-customer-name">
+                    {{ booking.customer_display }}</span></p>
                 <p class="booking-item-meta"><strong>Data:</strong> {{ booking.date|date:"d/m/Y" }}</p>
-                <p class="booking-item-meta"><strong>Horario:</strong> {{ booking.start_hour|time:"H:i" }} - {{
-                    booking.end_hour|time:"H:i" }}</p>
+                <p class="booking-item-meta"><strong>Horario:</strong> {{ booking.start_hour|time:"H:i" }} - 
+                    {{ booking.end_hour|time:"H:i" }}</p>
                 <p class="booking-item-meta"><strong>Valor:</strong> {{ booking.booking_price_display }}</p>
                 <form method="post" class="cancel-booking-form" data-cancel-form>
                     {% csrf_token %}
@@ -123,6 +161,7 @@
                     <input type="hidden" name="sport" value="{{ selected_sport_id }}">
                     <input type="hidden" name="court" value="{{ selected_court_id }}">
                     <input type="hidden" name="tab" value="{{ selected_tab }}">
+                    <input type="hidden" name="customer" value="{{ selected_customer_name }}">
                     <button type="button" class="cancel-booking-btn" data-open-cancel-modal>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -135,7 +174,7 @@
                 </form>
             </article>
             {% empty %}
-            <div class="card">
+            <div class="no-bookings-message no-bookings-message-plain">
                 <p>Nao ha agendamentos atuais.</p>
             </div>
             {% endfor %}
@@ -143,7 +182,7 @@
 
         <section id="past-bookings-section" hidden>
             {% for booking in past_bookings %}
-            <article class="card booking-item-card">
+            <article class="card booking-item-card" data-booking-card>
                 {% if booking.is_active %}
                 <span class="booking-status-label completed">Concluido</span>
                 {% else %}
@@ -151,14 +190,15 @@
                 {% endif %}
                 <p class="booking-item-title">{{ booking.court_id.name }}</p>
                 <p class="text-secondary">{{ booking.sport_id.name }}</p>
-                <p class="booking-item-meta"><strong>Cliente:</strong> {{ booking.customer_display }}</p>
+                <p class="booking-item-meta"><strong>Cliente:</strong> <span class="booking-customer-name">
+                    {{ booking.customer_display }}</span></p>
                 <p class="booking-item-meta"><strong>Data:</strong> {{ booking.date|date:"d/m/Y" }}</p>
-                <p class="booking-item-meta"><strong>Horario:</strong> {{ booking.start_hour|time:"H:i" }} - {{
-                    booking.end_hour|time:"H:i" }}</p>
+                <p class="booking-item-meta"><strong>Horario:</strong> {{ booking.start_hour|time:"H:i" }} - 
+                    {{ booking.end_hour|time:"H:i" }}</p>
                 <p class="booking-item-meta"><strong>Valor:</strong> {{ booking.booking_price_display }}</p>
             </article>
             {% empty %}
-            <div class="card">
+            <div class="no-bookings-message no-bookings-message-plain">
                 <p>Nao ha agendamentos passados.</p>
             </div>
             {% endfor %}
@@ -180,7 +220,7 @@
                             </path>
                         </svg>
                     </span>
-                    <p class="modal-court-name cancel-modal-title">Cancelar horario</p>
+                    <p class="modal-court-name cancel-modal-title">Cancelar horário</p>
                 </div>
                 <button id="closeCancelModal" class="btn-icon modal-close-btn" type="button" aria-label="Fechar">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -195,15 +235,15 @@
                 <button id="keepBookingBtn" type="button"
                     class="btn btn-secondary cancel-modal-btn cancel-modal-btn-neutral">Voltar</button>
                 <button id="confirmCancelBtn" type="button"
-                    class="btn btn-primary cancel-modal-btn cancel-modal-btn-danger">Confirmar cancelamento</button>
+                    class="btn btn-primary cancel-modal-btn cancel-modal-btn-danger">Cancelar</button>
             </div>
         </div>
     </div>
 
-    <div id="filtersModal" class="booking-modal" aria-hidden="true">
+    <div id="filtersModal" class="booking-modal admin-filters-modal" aria-hidden="true">
         <div class="booking-modal-backdrop" data-close-filters-modal="true"></div>
-        <div class="booking-modal-content">
-            <div class="booking-modal-header">
+        <div class="booking-modal-content admin-filters-modal-content">
+            <div class="booking-modal-header admin-filters-modal-header">
                 <div>
                     <p class="modal-court-name">Filtrar agendamentos</p>
                 </div>
@@ -219,6 +259,7 @@
             <form method="get" action="{% url 'admin_bookings' %}">
                 <input type="hidden" name="date" value="{{ selected_date_iso }}">
                 <input type="hidden" id="filtersFormTabInput" name="tab" value="{{ selected_tab }}">
+                <input type="hidden" name="customer" value="{{ selected_customer_name }}">
 
                 <div class="modal-section">
                     <label for="filterSport" class="modal-section-title">Esporte</label>
@@ -242,8 +283,9 @@
 
                 <div class="cancel-modal-actions">
                     <a class="btn btn-secondary cancel-modal-btn cancel-modal-btn-neutral"
-                        href="{% url 'admin_bookings' %}?date={{ selected_date_iso }}">Limpar</a>
-                    <button type="submit" class="btn btn-primary cancel-modal-btn">Aplicar</button>
+                        href="{% url 'admin_bookings' %}?date={{ selected_date_iso }}&tab={{ selected_tab }}&customer={{ selected_customer_name|urlencode }}">Limpar</a>
+                    <button type="submit"
+                        class="btn btn-primary cancel-modal-btn admin-apply-filters-btn">Aplicar</button>
                 </div>
             </form>
         </div>
@@ -272,10 +314,30 @@
                 if (filtersFormTabInput) {
                     filtersFormTabInput.value = selectedTab;
                 }
+
+                const searchFormTabInput = document.getElementById('searchFormTabInput');
+                if (searchFormTabInput) {
+                    searchFormTabInput.value = selectedTab;
+                }
             }
 
-            currentRadio.addEventListener('change', syncTabVisibility);
-            pastRadio.addEventListener('change', syncTabVisibility);
+            function submitSelectedTab() {
+                const dateForm = document.getElementById('dateForm');
+                if (!dateForm) {
+                    return;
+                }
+                dateForm.requestSubmit();
+            }
+
+            currentRadio.addEventListener('change', function () {
+                syncTabVisibility();
+                submitSelectedTab();
+            });
+
+            pastRadio.addEventListener('change', function () {
+                syncTabVisibility();
+                submitSelectedTab();
+            });
             syncTabVisibility();
 
             const modal = document.getElementById('cancelBookingModal');
@@ -350,6 +412,7 @@
             document.querySelectorAll('[data-close-filters-modal="true"]').forEach((node) => {
                 node.addEventListener('click', closeFiltersModal);
             });
+
         });
     </script>
 </body>
