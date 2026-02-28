@@ -52,7 +52,7 @@
                 <p class="booking-item-title">{{ booking.court_id.name }}</p>
                 <p class="text-secondary">{{ booking.sport_id.name }}</p>
                 <p class="booking-item-meta"><strong>Data:</strong> {{ booking.date|date:"d/m/Y" }}</p>
-                <p class="booking-item-meta"><strong>Horario:</strong> {{ booking.start_hour|time:"H:i" }} -
+                <p class="booking-item-meta"><strong>Horário:</strong> {{ booking.start_hour|time:"H:i" }} -
                     {{ booking.end_hour|time:"H:i" }}</p>
                 <p class="booking-item-meta"><strong>Valor:</strong> {{ booking.booking_price_display }}</p>
                 <form method="post" class="cancel-booking-form" data-cancel-form>
@@ -87,7 +87,7 @@
                 <p class="booking-item-title">{{ booking.court_id.name }}</p>
                 <p class="text-secondary">{{ booking.sport_id.name }}</p>
                 <p class="booking-item-meta"><strong>Data:</strong> {{ booking.date|date:"d/m/Y" }}</p>
-                <p class="booking-item-meta"><strong>Horario:</strong> {{ booking.start_hour|time:"H:i" }} -
+                <p class="booking-item-meta"><strong>Horário:</strong> {{ booking.start_hour|time:"H:i" }} -
                     {{ booking.end_hour|time:"H:i" }}</p>
                 <p class="booking-item-meta"><strong>Valor:</strong> {{ booking.booking_price_display }}</p>
             </article>

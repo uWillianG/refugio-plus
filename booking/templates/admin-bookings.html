@@ -150,6 +150,8 @@
                 <p class="text-secondary">{{ booking.sport_id.name }}</p>
                 <p class="booking-item-meta"><strong>Cliente:</strong> <span class="booking-customer-name">
                     {{ booking.customer_display }}</span></p>
+                <p class="booking-item-meta"><strong>Telefone:</strong> <span class="booking-customer-phone">
+                    {{ booking.phone_display }}</span></p>
                 <p class="booking-item-meta"><strong>Data:</strong> {{ booking.date|date:"d/m/Y" }}</p>
                 <p class="booking-item-meta"><strong>Horario:</strong> {{ booking.start_hour|time:"H:i" }} - 
                     {{ booking.end_hour|time:"H:i" }}</p>
@@ -169,13 +171,13 @@
                             <line x1="15" y1="9" x2="9" y2="15"></line>
                             <line x1="9" y1="9" x2="15" y2="15"></line>
                         </svg>
-                        <span>Cancelar horario</span>
+                        <span>Cancelar horário</span>
                     </button>
                 </form>
             </article>
             {% empty %}
             <div class="no-bookings-message no-bookings-message-plain">
-                <p>Nao ha agendamentos atuais.</p>
+                <p>Nao há agendamentos atuais.</p>
             </div>
             {% endfor %}
         </section>
@@ -192,6 +194,8 @@
                 <p class="text-secondary">{{ booking.sport_id.name }}</p>
                 <p class="booking-item-meta"><strong>Cliente:</strong> <span class="booking-customer-name">
                     {{ booking.customer_display }}</span></p>
+                <p class="booking-item-meta"><strong>Telefone:</strong> <span class="booking-customer-phone">
+                    {{ booking.phone_display }}</span></p>
                 <p class="booking-item-meta"><strong>Data:</strong> {{ booking.date|date:"d/m/Y" }}</p>
                 <p class="booking-item-meta"><strong>Horario:</strong> {{ booking.start_hour|time:"H:i" }} - 
                     {{ booking.end_hour|time:"H:i" }}</p>

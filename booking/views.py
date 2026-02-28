@@ -298,7 +298,7 @@ class BookingConfirmView(View):
     def post(request):
         payload = BookingConfirmView._parse_booking_payload(request.POST)
         if not payload:
-            messages.error(request, "Horario invalido ou indisponivel. Escolha outro horario.")
+            messages.error(request, "Horário inválido ou indisponível. Escolha outro horário.")
             return redirect("booking")
 
         if request.user.is_authenticated:
@@ -391,7 +391,7 @@ class MyBookingsView(View):
         try:
             schedule_id = int(schedule_id)
         except (TypeError, ValueError):
-            messages.error(request, "Agendamento invalido.")
+            messages.error(request, "Agendamento inválido.")
             return redirect("my_bookings")
 
         booking = schedules.objects.filter(
@@ -401,14 +401,14 @@ class MyBookingsView(View):
         ).first()
 
         if not booking:
-            messages.error(request, "Nao foi possivel cancelar esse agendamento.")
+            messages.error(request, "Não foi possível cancelar esse agendamento.")
             return redirect("my_bookings")
 
         booking.is_active = False
         booking.cancelled_at = timezone.now()
         booking.save(update_fields=["is_active", "cancelled_at", "updated_at"])
 
-        messages.success(request, "Horario cancelado com sucesso.")
+        messages.success(request, "Horário cancelado com sucesso.")
         context = MyBookingsView._context_for_user(request)
         return render(request, "my-bookings.html", context)
 
@@ -433,10 +433,23 @@ class AdminBookingsView(View):
         for row in rows:
             if row.user_name:
                 row.customer_display = row.user_name
+                row.phone_display = row.user_phone
             elif row.user_id:
                 row.customer_display = row.user_id.name
+                row.phone_display = row.user_id.phone
             else:
-                row.customer_display = "Nao informado"
+                row.customer_display = "Não informado"
+        return rows
+
+    @staticmethod
+    def _attach_phone_display(rows):
+        for row in rows:
+            if row.user_phone:
+                row.phone_display = row.user_phone
+            elif row.user_id:
+                row.phone_display = row.user_id.phone
+            else:
+                row.phone_display = "Não informado"
         return rows
 
     @staticmethod
@@ -474,18 +487,19 @@ class AdminBookingsView(View):
         return "current"
 
     @staticmethod
-    def _build_redirect_url(selected_date, sport_id=None, court_id=None, selected_tab="current", customer_name=""):
+    def _build_redirect_url(selected_date, sport_id=None, court_id=None, selected_tab="current", customer_name="", customer_phone=""):
         query_params = {
             "date": selected_date.isoformat(),
             "sport": sport_id or "",
             "court": court_id or "",
             "tab": AdminBookingsView._normalize_tab(selected_tab),
             "customer": (customer_name or "").strip(),
+            "phone_number": (customer_phone or "").strip(),
         }
         return f"{reverse('admin_bookings')}?{urlencode(query_params)}"
 
     @staticmethod
-    def _context(selected_date, sport_id=None, court_id=None, selected_tab="current", customer_name=""):
+    def _context(selected_date, sport_id=None, court_id=None, selected_tab="current", customer_name="", customer_phone=""):
         now = timezone.localtime()
         today = now.date()
         current_time = now.time().replace(microsecond=0)
@@ -526,6 +540,8 @@ class AdminBookingsView(View):
         past_rows = AdminBookingsView._attach_price_display(past_rows)
         current_rows = AdminBookingsView._attach_customer_display(current_rows)
         past_rows = AdminBookingsView._attach_customer_display(past_rows)
+        current_rows = AdminBookingsView._attach_phone_display(current_rows)
+        past_rows = AdminBookingsView._attach_phone_display(past_rows)
 
         return {
             "current_bookings": current_rows,
@@ -538,6 +554,7 @@ class AdminBookingsView(View):
             "selected_court_id": court_id or "",
             "selected_tab": normalized_tab,
             "selected_customer_name": (customer_name or "").strip(),
+            "selected_customer_phone": (customer_phone or "").strip(),
         }
 
     @staticmethod
@@ -554,12 +571,14 @@ class AdminBookingsView(View):
         selected_court_id = AdminBookingsView._parse_optional_int(request.GET.get("court"))
         selected_tab = AdminBookingsView._normalize_tab(request.GET.get("tab"))
         customer_name = request.GET.get("customer", "")
+        customer_phone = request.GET.get("phone_number", "")
         context = AdminBookingsView._context(
             selected_date,
             sport_id=selected_sport_id,
             court_id=selected_court_id,
             selected_tab=selected_tab,
             customer_name=customer_name,
+            customer_phone=customer_phone,
         )
         return render(request, "admin-bookings.html", context)
 
@@ -577,11 +596,12 @@ class AdminBookingsView(View):
         selected_court_id = AdminBookingsView._parse_optional_int(request.POST.get("court"))
         selected_tab = AdminBookingsView._normalize_tab(request.POST.get("tab"))
         customer_name = request.POST.get("customer", "")
+        customer_phone = request.POST.get("phone_number", "")
         schedule_id = request.POST.get("schedule_id")
         try:
             schedule_id = int(schedule_id)
         except (TypeError, ValueError):
-            messages.error(request, "Agendamento invalido.")
+            messages.error(request, "Agendamento inválido.")
             return redirect(
                 AdminBookingsView._build_redirect_url(
                     selected_date,
@@ -589,6 +609,7 @@ class AdminBookingsView(View):
                     court_id=selected_court_id,
                     selected_tab=selected_tab,
                     customer_name=customer_name,
+                    customer_phone=customer_phone,
                 )
             )
 
@@ -598,7 +619,7 @@ class AdminBookingsView(View):
         ).first()
 
         if not booking:
-            messages.error(request, "Nao foi possivel cancelar esse agendamento.")
+            messages.error(request, "Não foi possível cancelar esse agendamento.")
             return redirect(
                 AdminBookingsView._build_redirect_url(
                     selected_date,
@@ -606,6 +627,7 @@ class AdminBookingsView(View):
                     court_id=selected_court_id,
                     selected_tab=selected_tab,
                     customer_name=customer_name,
+                    customer_phone=customer_phone,
                 )
             )
 
@@ -613,12 +635,13 @@ class AdminBookingsView(View):
         booking.cancelled_at = timezone.now()
         booking.save(update_fields=["is_active", "cancelled_at", "updated_at"])
 
-        messages.success(request, "Horario cancelado com sucesso.")
+        messages.success(request, "Horário cancelado com sucesso.")
         context = AdminBookingsView._context(
             selected_date,
             sport_id=selected_sport_id,
             court_id=selected_court_id,
             selected_tab=selected_tab,
             customer_name=customer_name,
+            customer_phone=customer_phone,
         )
         return render(request, "admin-bookings.html", context)
