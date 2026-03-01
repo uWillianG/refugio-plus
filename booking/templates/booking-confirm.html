@@ -60,7 +60,17 @@
             </div>
             {% endif %}
 
+            {% if booking_warning %}
+            <div class="card confirm-warning-card">
+                <p class="confirm-warning">{{ booking_warning }}</p>
+            </div>
+            {% endif %}
+
+            {% if booking_warning %}
+            <a href="{% url 'booking' %}" class="btn btn-secondary" type="button">Escolher outro horário</a>
+            {% else %}
             <button class="btn btn-primary" type="submit">Confirmar</button>
+            {% endif %}
         </form>
         {% endif %}
     </div>

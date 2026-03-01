@@ -640,6 +640,16 @@ button.time-slot {
     font-weight: 600;
 }
 
+.confirm-warning-card {
+    border: 1px solid rgba(185, 28, 28, 0.18);
+    background: #fff1f2;
+}
+
+.confirm-warning {
+    color: #991b1b;
+    font-weight: 600;
+}
+
 .bookings-filter-card {
     padding: 12px;
 }

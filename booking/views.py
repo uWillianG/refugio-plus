@@ -199,7 +199,17 @@ class BookingView(View):
 
 class BookingConfirmView(View):
     @staticmethod
-    def _parse_booking_payload(source):
+    def _has_conflict(payload):
+        return schedules.objects.filter(
+            court_id=payload["court_obj"],
+            date=payload["selected_date"],
+            is_active=True,
+            start_hour__lt=time(hour=payload["end_hour"]),
+            end_hour__gt=time(hour=payload["start_hour"]),
+        ).exists()
+
+    @staticmethod
+    def _parse_booking_payload(source, validate_slot=True):
         court_id = source.get("court")
         date_iso = source.get("date")
         sport_id = source.get("sport")
@@ -234,21 +244,22 @@ class BookingConfirmView(View):
         if not sport_obj:
             return None
 
-        blocked_intervals = load_blocked_intervals(court_id, selected_date)
-        matrix = build_slot_matrix(selected_date, blocked_intervals)
-        is_valid_slot = any(
-            row["start_hour"] == start_hour
-            and any(
-                option["start_hour"] == start_hour
-                and option["end_hour"] == end_hour
-                and option["status"] == "available"
-                for option in row["options"]
+        if validate_slot:
+            blocked_intervals = load_blocked_intervals(court_id, selected_date)
+            matrix = build_slot_matrix(selected_date, blocked_intervals)
+            is_valid_slot = any(
+                row["start_hour"] == start_hour
+                and any(
+                    option["start_hour"] == start_hour
+                    and option["end_hour"] == end_hour
+                    and option["status"] == "available"
+                    for option in row["options"]
+                )
+                for row in matrix
             )
-            for row in matrix
-        )
 
-        if not is_valid_slot:
-            return None
+            if not is_valid_slot:
+                return None
 
         return {
             "court_id": court_id,
@@ -262,7 +273,7 @@ class BookingConfirmView(View):
         }
 
     @staticmethod
-    def _build_context(payload, guest_name="", guest_phone="", form_error=""):
+    def _build_context(payload, guest_name="", guest_phone="", form_error="", booking_warning=""):
         booking_price = booking_total_price(
             payload["selected_date"],
             payload["start_hour"],
@@ -281,6 +292,7 @@ class BookingConfirmView(View):
             "guest_name": guest_name,
             "guest_phone": guest_phone,
             "form_error": form_error,
+            "booking_warning": booking_warning,
             "success_message": "",
             "success_redirect_url": "",
         }
@@ -296,7 +308,7 @@ class BookingConfirmView(View):
 
     @staticmethod
     def post(request):
-        payload = BookingConfirmView._parse_booking_payload(request.POST)
+        payload = BookingConfirmView._parse_booking_payload(request.POST, validate_slot=False)
         if not payload:
             messages.error(request, "Horário inválido ou indisponível. Escolha outro horário.")
             return redirect("booking")
@@ -321,6 +333,15 @@ class BookingConfirmView(View):
                 return render(request, "booking-confirm.html", context)
 
             schedule_phone = int(schedule_phone_digits)
+
+        if BookingConfirmView._has_conflict(payload):
+            context = BookingConfirmView._build_context(
+                payload,
+                guest_name=schedule_name,
+                guest_phone=request.POST.get("guest_phone", "").strip(),
+                booking_warning="Este horário para a quadra selecionada não está mais disponível. Verifique a disponibilidade atual através do botão abaixo.",
+            )
+            return render(request, "booking-confirm.html", context)
 
         schedules.objects.create(
             date=payload["selected_date"],
