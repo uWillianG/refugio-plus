@@ -37,18 +37,17 @@ def _save_pending_registration(request, form):
         'name': form.cleaned_data['name'],
         'email': form.cleaned_data['email'],
         'phone': form.cleaned_data['phone'],
-        'cpf': form.cleaned_data['cpf'],
         'password_hash': make_password(form.cleaned_data['password']),
     }
 
 
 def _send_verification_email(email, code):
     send_mail(
-        subject='Refugio+ - Codigo de verificacao',
+        subject='Refúgio Plus - Código de verificação',
         message=(
-            'Recebemos uma solicitacao de cadastro no Refugio+.\n\n'
-            f'Seu codigo de verificacao e: {code}\n\n'
-            'Se voce nao solicitou este cadastro, ignore este email.'
+            'Recebemos uma solicitação de cadastro no Refúgio+.\n\n'
+            f'Seu código de verificação é: {code}\n\n'
+            'Se voce não solicitou este cadastro, ignore este email.'
         ),
         from_email=None,
         recipient_list=[email],
@@ -74,11 +73,11 @@ def _clear_pending_password_reset(request):
 
 def _send_password_reset_email(email, code):
     send_mail(
-        subject='Refugio+ - Recuperacao de senha',
+        subject='Refúgio Plus - Recuperação de senha',
         message=(
-            'Recebemos uma solicitacao de recuperacao de senha no Refugio+.\n\n'
-            f'Seu codigo de verificacao e: {code}\n\n'
-            'Se voce nao solicitou a redefinicao de senha, ignore este email.'
+            'Recebemos uma solicitação de recuperação de senha no Refúgio+.\n\n'
+            f'Seu código de verificação é: {code}\n\n'
+            'Se voce não solicitou a redefinição de senha, ignore este email.'
         ),
         from_email=None,
         recipient_list=[email],
@@ -119,10 +118,6 @@ def cadastro_view(request):
     if request.method == 'POST':
         form = CadastroForm(request.POST)
         if form.is_valid():
-            if users.objects.filter(cpf=form.cleaned_data['cpf']).exists():
-                form.add_error('cpf', 'CPF inválido ou já cadastrado.')
-                return render(request, 'cadastro.html', _cadastro_context(form, request))
-
             _save_pending_registration(request, form)
 
             verification_code = _generate_verification_code()
@@ -131,11 +126,11 @@ def cadastro_view(request):
             try:
                 _send_verification_email(form.cleaned_data['email'], verification_code)
             except Exception as exc:
-                logger.exception('Falha ao enviar email de verificacao no cadastro')
+                logger.exception('Falha ao enviar email de verificação no cadastro')
                 _clear_pending_registration(request)
-                error_message = 'Nao foi possivel enviar o email de verificacao. Tente novamente.'
+                error_message = 'Não foi possivel enviar o email de verificação. Tente novamente.'
                 if settings.DEBUG:
-                    error_message = f'{error_message} Detalhe tecnico: {exc}'
+                    error_message = f'{error_message} Detalhe técnico: {exc}'
                 form.add_error(None, error_message)
                 return render(request, 'cadastro.html', {'form': form})
 
@@ -163,7 +158,7 @@ def verificar_codigo_view(request):
     expected_code = request.session.get(EMAIL_VERIFICATION_CODE_KEY)
 
     if not pending or not expected_code:
-        messages.error(request, 'Sua verificacao expirou. Faca o cadastro novamente.')
+        messages.error(request, 'Sua verificação expirou. Faça o cadastro novamente.')
         return redirect('cadastro')
 
     informed_code = request.POST.get('verification_code', '').strip()
@@ -175,7 +170,7 @@ def verificar_codigo_view(request):
             _cadastro_context(
                 CadastroForm(),
                 request,
-                verification_error='Codigo incorreto. Tente novamente.',
+                verification_error='Código incorreto. Tente novamente.',
                 show_modal=True,
             ),
         )
@@ -185,17 +180,16 @@ def verificar_codigo_view(request):
             name=pending['name'],
             email=pending['email'],
             phone=pending['phone'],
-            cpf=pending['cpf'],
         )
         user.password = pending['password_hash']
         user.save()
     except IntegrityError:
         _clear_pending_registration(request)
-        messages.error(request, 'Nao foi possivel concluir o cadastro. Email ou CPF ja cadastrado.')
+        messages.error(request, 'Não foi possível concluir o cadastro. Dados já utilizados.')
         return redirect('cadastro')
 
     _clear_pending_registration(request)
-    messages.success(request, 'Cadastro concluido com sucesso.')
+    messages.success(request, 'Cadastro concluído com sucesso.')
     return redirect('login')
 
 
@@ -206,7 +200,7 @@ def reenviar_codigo_view(request):
 
     pending = request.session.get(PENDING_REGISTRATION_KEY)
     if not pending:
-        messages.error(request, 'Nao ha verificacao pendente. Preencha o cadastro novamente.')
+        messages.error(request, 'Não há verificação pendente. Preencha o cadastro novamente.')
         return redirect('cadastro')
 
     verification_code = _generate_verification_code()
@@ -215,10 +209,10 @@ def reenviar_codigo_view(request):
     try:
         _send_verification_email(pending['email'], verification_code)
     except Exception as exc:
-        logger.exception('Falha ao reenviar email de verificacao')
-        error_message = 'Falha ao reenviar o codigo. Tente novamente.'
+        logger.exception('Falha ao reenviar email de verificação')
+        error_message = 'Falha ao reenviar o código. Tente novamente.'
         if settings.DEBUG:
-            error_message = f'{error_message} Detalhe tecnico: {exc}'
+            error_message = f'{error_message} Detalhe técnico: {exc}'
         return render(
             request,
             'cadastro.html',
@@ -236,7 +230,7 @@ def reenviar_codigo_view(request):
         _cadastro_context(
             CadastroForm(),
             request,
-            verification_info='Codigo reenviado para o seu email.',
+            verification_info='Código reenviado para o seu email.',
             show_modal=True,
         ),
     )
@@ -255,7 +249,7 @@ def login_view(request):
                 login(request, user)
                 return redirect('booking')
 
-            messages.error(request, 'Email ou senha invalidos.')
+            messages.error(request, 'Email ou senha inválidos.')
     else:
         form = LoginForm()
 
@@ -278,7 +272,7 @@ def enviar_codigo_recuperacao_view(request):
                 request,
                 show_modal=True,
                 reset_step='email',
-                reset_error=reset_request_form.errors.get('email', ['Email invalido.'])[0],
+                reset_error=reset_request_form.errors.get('email', ['Email inválido.'])[0],
                 reset_email=request.POST.get('email', '').strip(),
             ),
         )
@@ -306,11 +300,11 @@ def enviar_codigo_recuperacao_view(request):
     try:
         _send_password_reset_email(email, verification_code)
     except Exception as exc:
-        logger.exception('Falha ao enviar email de recuperacao de senha')
+        logger.exception('Falha ao enviar email de recuperação de senha')
         _clear_pending_password_reset(request)
-        error_message = 'Nao foi possivel enviar o email de verificacao. Tente novamente.'
+        error_message = 'Não foi possível enviar o email de verificação. Tente novamente.'
         if settings.DEBUG:
-            error_message = f'{error_message} Detalhe tecnico: {exc}'
+            error_message = f'{error_message} Detalhe técnico: {exc}'
         return render(
             request,
             'login.html',
@@ -345,7 +339,7 @@ def reenviar_codigo_recuperacao_view(request):
     form = LoginForm()
     pending_reset = request.session.get(PENDING_PASSWORD_RESET_KEY)
     if not pending_reset:
-        messages.error(request, 'Nao ha recuperacao de senha pendente.')
+        messages.error(request, 'Não há recuperação de senha pendente.')
         return redirect('login')
 
     email = pending_reset.get('email', '')
@@ -356,10 +350,10 @@ def reenviar_codigo_recuperacao_view(request):
     try:
         _send_password_reset_email(email, verification_code)
     except Exception as exc:
-        logger.exception('Falha ao reenviar email de recuperacao')
-        error_message = 'Falha ao reenviar o codigo. Tente novamente.'
+        logger.exception('Falha ao reenviar email de recuperação')
+        error_message = 'Falha ao reenviar o código. Tente novamente.'
         if settings.DEBUG:
-            error_message = f'{error_message} Detalhe tecnico: {exc}'
+            error_message = f'{error_message} Detalhe técnico: {exc}'
         return render(
             request,
             'login.html',
@@ -381,7 +375,7 @@ def reenviar_codigo_recuperacao_view(request):
             request,
             show_modal=True,
             reset_step='code',
-            reset_info='Codigo reenviado para o seu email.',
+            reset_info='Código reenviado para o seu email.',
             reset_email=email,
         ),
     )
@@ -397,7 +391,7 @@ def verificar_codigo_recuperacao_view(request):
     expected_code = request.session.get(PASSWORD_RESET_CODE_KEY)
 
     if not pending_reset or not expected_code:
-        messages.error(request, 'Sua recuperacao expirou. Solicite um novo codigo.')
+        messages.error(request, 'Sua recuperação expirou. Solicite um novo código.')
         return redirect('login')
 
     informed_code = request.POST.get('verification_code', '').strip()
@@ -410,7 +404,7 @@ def verificar_codigo_recuperacao_view(request):
                 request,
                 show_modal=True,
                 reset_step='code',
-                reset_error='Codigo incorreto. Tente novamente.',
+                reset_error='Código incorreto. Tente novamente.',
             ),
         )
 
@@ -437,7 +431,7 @@ def redefinir_senha_view(request):
     is_verified = request.session.get(PASSWORD_RESET_VERIFIED_KEY, False)
 
     if not pending_reset or not is_verified:
-        messages.error(request, 'Sua recuperacao expirou. Solicite um novo codigo.')
+        messages.error(request, 'Sua recuperação expirou. Solicite um novo código.')
         return redirect('login')
 
     reset_confirm_form = PasswordResetConfirmForm(request.POST)
@@ -445,7 +439,7 @@ def redefinir_senha_view(request):
         field_error = (
             reset_confirm_form.errors.get('password_confirm', [''])[0]
             or reset_confirm_form.errors.get('password', [''])[0]
-            or 'Dados invalidos.'
+            or 'Dados inválidos.'
         )
         return render(
             request,
@@ -463,14 +457,14 @@ def redefinir_senha_view(request):
     user = users.objects.filter(email=email).first()
     if not user:
         _clear_pending_password_reset(request)
-        messages.error(request, 'Nao foi possivel redefinir a senha. Conta nao encontrada.')
+        messages.error(request, 'Não foi possível redefinir a senha. Conta nao encontrada.')
         return redirect('login')
 
     user.password = make_password(reset_confirm_form.cleaned_data['password'])
     user.save(update_fields=['password'])
 
     _clear_pending_password_reset(request)
-    messages.success(request, 'Senha redefinida com sucesso. Faca login com a nova senha.')
+    messages.success(request, 'Senha redefinida com sucesso. Faça login com a nova senha.')
     return redirect('login')
 
 

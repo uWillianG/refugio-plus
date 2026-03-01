@@ -26,7 +26,6 @@ class users(AbstractBaseUser):
     id = models.AutoField(primary_key=True)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     name = models.CharField(max_length=150)
-    cpf = models.CharField(unique=True)
     phone = models.BigIntegerField()
     email = models.CharField(max_length=150, unique=True)
     password = models.CharField(max_length=128)

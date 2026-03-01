@@ -8,40 +8,34 @@ class CadastroForm(forms.ModelForm):
     name = forms.CharField(
         label='Nome',
         widget=forms.TextInput(),
-        error_messages={'required': 'Este campo e obrigatorio.'},
+        error_messages={'required': 'Este campo é obrigatório.'},
     )
 
     email = forms.EmailField(
         label='Email',
         widget=forms.EmailInput(),
         error_messages={
-            'required': 'Este campo e obrigatorio.',
-            'invalid': 'O e-mail digitado nao e valido',
+            'required': 'Este campo é obrigatório.',
+            'invalid': 'O e-mail digitado não é válido',
         },
     )
 
     phone = forms.CharField(
         label='Phone',
         widget=forms.TextInput(),
-        error_messages={'required': 'Este campo e obrigatorio.'},
-    )
-
-    cpf = forms.CharField(
-        label='Cpf',
-        widget=forms.TextInput(),
-        error_messages={'required': 'Este campo e obrigatorio.'},
+        error_messages={'required': 'Este campo é obrigatório.'},
     )
 
     password = forms.CharField(
         label='Senha',
         widget=forms.PasswordInput(),
-        error_messages={'required': 'Este campo e obrigatorio.'},
+        error_messages={'required': 'Este campo é obrigatório.'},
     )
 
     password_confirm = forms.CharField(
         label='Confirmar Senha',
         widget=forms.PasswordInput(),
-        error_messages={'required': 'Este campo e obrigatorio.'},
+        error_messages={'required': 'Este campo é obrigatório.'},
     )
 
     class Meta:
@@ -61,18 +55,9 @@ class CadastroForm(forms.ModelForm):
         phone_digits = ''.join(filter(str.isdigit, str(phone)))
 
         if len(phone_digits) not in (10, 11):
-            raise forms.ValidationError('Telefone invalido.')
+            raise forms.ValidationError('Telefone inválido.')
 
         return int(phone_digits)
-
-    def clean_cpf(self):
-        cpf = self.cleaned_data.get('cpf')
-        cpf_digits = ''.join(filter(str.isdigit, str(cpf)))
-
-        if len(cpf_digits) != 11:
-            raise forms.ValidationError('CPF invalido.')
-
-        return int(cpf_digits)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -80,7 +65,7 @@ class CadastroForm(forms.ModelForm):
         password_confirm = cleaned_data.get('password_confirm')
 
         if password and password_confirm and password != password_confirm:
-            self.add_error('password_confirm', 'As senhas nao coincidem.')
+            self.add_error('password_confirm', 'As senhas não coincidem.')
 
         return cleaned_data
 
@@ -90,15 +75,15 @@ class LoginForm(forms.Form):
         label='Email',
         widget=forms.EmailInput(),
         error_messages={
-            'required': 'Este campo e obrigatorio.',
-            'invalid': 'O e-mail digitado nao e valido',
+            'required': 'Este campo é obrigatório.',
+            'invalid': 'O e-mail digitado não é válido',
         },
     )
 
     password = forms.CharField(
         label='Senha',
         widget=forms.PasswordInput(),
-        error_messages={'required': 'Este campo e obrigatorio.'},
+        error_messages={'required': 'Este campo é obrigatório.'},
     )
 
     def clean_email(self):
@@ -106,7 +91,7 @@ class LoginForm(forms.Form):
         try:
             result = validate_email(email, check_deliverability=False)
         except EmailNotValidError:
-            raise forms.ValidationError('O e-mail digitado nao e valido')
+            raise forms.ValidationError('O e-mail digitado não é válido')
         return result.normalized
 
 
@@ -115,8 +100,8 @@ class PasswordResetRequestForm(forms.Form):
         label='Email',
         widget=forms.EmailInput(),
         error_messages={
-            'required': 'Este campo e obrigatorio.',
-            'invalid': 'O e-mail digitado nao e valido',
+            'required': 'Este campo é obrigatório.',
+            'invalid': 'O e-mail digitado não é válido',
         },
     )
 
@@ -125,7 +110,7 @@ class PasswordResetRequestForm(forms.Form):
         try:
             result = validate_email(email, check_deliverability=False)
         except EmailNotValidError:
-            raise forms.ValidationError('O e-mail digitado nao e valido')
+            raise forms.ValidationError('O e-mail digitado não é válido')
         return result.normalized
 
 
@@ -133,12 +118,12 @@ class PasswordResetConfirmForm(forms.Form):
     password = forms.CharField(
         label='Nova senha',
         widget=forms.PasswordInput(),
-        error_messages={'required': 'Este campo e obrigatorio.'},
+        error_messages={'required': 'Este campo é obrigatório.'},
     )
     password_confirm = forms.CharField(
         label='Confirmar nova senha',
         widget=forms.PasswordInput(),
-        error_messages={'required': 'Este campo e obrigatorio.'},
+        error_messages={'required': 'Este campo é obrigatório.'},
     )
 
     def clean(self):
@@ -147,6 +132,6 @@ class PasswordResetConfirmForm(forms.Form):
         password_confirm = cleaned_data.get('password_confirm')
 
         if password and password_confirm and password != password_confirm:
-            self.add_error('password_confirm', 'As senhas nao coincidem.')
+            self.add_error('password_confirm', 'As senhas não coincidem.')
 
         return cleaned_data
