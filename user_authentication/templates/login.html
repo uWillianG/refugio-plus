@@ -190,7 +190,7 @@
             {% else %}
             <h2>Recuperar senha</h2>
             <p>
-                Informe o email da sua conta para enviarmos um codigo de verificacao.
+                Informe o email da sua conta para enviarmos um código de verificação.
             </p>
 
             <form method="post" action="{% url 'enviar_codigo_recuperacao' %}" class="verification-form">
@@ -203,7 +203,7 @@
                 <div class="verification-error">{{ password_reset_error }}</div>
                 {% endif %}
 
-                <button type="submit" class="button button-gradient">Enviar codigo</button>
+                <button type="submit" class="button button-gradient">Enviar código</button>
             </form>
             {% endif %}
         </div>

@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Refugio Plus - Admin agendamentos</title>
+    <title>Refugio Plus - Administração</title>
     <link rel="stylesheet" href="{% static 'booking/css/style.css' %}">
 </head>
 
@@ -160,7 +160,7 @@
                 <p class="booking-item-meta"><strong>Telefone:</strong> <span class="booking-customer-phone">
                     {{ booking.phone_display }}</span></p>
                 <p class="booking-item-meta"><strong>Data:</strong> {{ booking.date|date:"d/m/Y" }}</p>
-                <p class="booking-item-meta"><strong>Horario:</strong> {{ booking.start_hour|time:"H:i" }} - 
+                <p class="booking-item-meta"><strong>Horário:</strong> {{ booking.start_hour|time:"H:i" }} - 
                     {{ booking.end_hour|time:"H:i" }}</p>
                 <p class="booking-item-meta"><strong>Valor:</strong> {{ booking.booking_price_display }}</p>
                 <form method="post" class="cancel-booking-form" data-cancel-form>
@@ -184,7 +184,7 @@
             </article>
             {% empty %}
             <div class="no-bookings-message no-bookings-message-plain">
-                <p>Nao há agendamentos atuais.</p>
+                <p>Não há agendamentos atuais.</p>
             </div>
             {% endfor %}
         </section>
@@ -193,7 +193,7 @@
             {% for booking in past_bookings %}
             <article class="card booking-item-card" data-booking-card>
                 {% if booking.is_active %}
-                <span class="booking-status-label completed">Concluido</span>
+                <span class="booking-status-label completed">Concluído</span>
                 {% else %}
                 <span class="booking-status-label canceled">Cancelado</span>
                 {% endif %}
@@ -204,13 +204,13 @@
                 <p class="booking-item-meta"><strong>Telefone:</strong> <span class="booking-customer-phone">
                     {{ booking.phone_display }}</span></p>
                 <p class="booking-item-meta"><strong>Data:</strong> {{ booking.date|date:"d/m/Y" }}</p>
-                <p class="booking-item-meta"><strong>Horario:</strong> {{ booking.start_hour|time:"H:i" }} - 
+                <p class="booking-item-meta"><strong>Horário:</strong> {{ booking.start_hour|time:"H:i" }} - 
                     {{ booking.end_hour|time:"H:i" }}</p>
                 <p class="booking-item-meta"><strong>Valor:</strong> {{ booking.booking_price_display }}</p>
             </article>
             {% empty %}
             <div class="no-bookings-message no-bookings-message-plain">
-                <p>Nao ha agendamentos passados.</p>
+                <p>Não há agendamentos passados.</p>
             </div>
             {% endfor %}
         </section>
