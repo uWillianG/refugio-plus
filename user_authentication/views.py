@@ -118,31 +118,46 @@ def cadastro_view(request):
     if request.method == 'POST':
         form = CadastroForm(request.POST)
         if form.is_valid():
-            _save_pending_registration(request, form)
-
-            verification_code = _generate_verification_code()
-            request.session[EMAIL_VERIFICATION_CODE_KEY] = verification_code
-
             try:
-                _send_verification_email(form.cleaned_data['email'], verification_code)
-            except Exception as exc:
-                logger.exception('Falha ao enviar email de verificação no cadastro')
-                _clear_pending_registration(request)
-                error_message = 'Não foi possivel enviar o email de verificação. Tente novamente.'
-                if settings.DEBUG:
-                    error_message = f'{error_message} Detalhe técnico: {exc}'
-                form.add_error(None, error_message)
+                user = users(
+                    name=form.cleaned_data['name'],
+                    email=form.cleaned_data['email'],
+                    phone=form.cleaned_data['phone'],
+                )
+                user.password = make_password(form.cleaned_data['password'])
+                user.save()
+            except IntegrityError:
+                form.add_error(None, 'Não foi possível concluir o cadastro. Dados já utilizados.')
                 return render(request, 'cadastro.html', {'form': form})
 
-            return render(
-                request,
-                'cadastro.html',
-                _cadastro_context(
-                    CadastroForm(),
-                    request,
-                    show_modal=True,
-                ),
-            )
+            messages.success(request, 'Cadastro concluído com sucesso.')
+            return redirect('login')
+
+            # Fluxo de confirmação por email desativado temporariamente.
+            # _save_pending_registration(request, form)
+            # verification_code = _generate_verification_code()
+            # request.session[EMAIL_VERIFICATION_CODE_KEY] = verification_code
+            #
+            # try:
+            #     _send_verification_email(form.cleaned_data['email'], verification_code)
+            # except Exception as exc:
+            #     logger.exception('Falha ao enviar email de verificação no cadastro')
+            #     _clear_pending_registration(request)
+            #     error_message = 'Não foi possivel enviar o email de verificação. Tente novamente.'
+            #     if settings.DEBUG:
+            #         error_message = f'{error_message} Detalhe técnico: {exc}'
+            #     form.add_error(None, error_message)
+            #     return render(request, 'cadastro.html', {'form': form})
+            #
+            # return render(
+            #     request,
+            #     'cadastro.html',
+            #     _cadastro_context(
+            #         CadastroForm(),
+            #         request,
+            #         show_modal=True,
+            #     ),
+            # )
     else:
         form = CadastroForm()
 
