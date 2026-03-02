@@ -20,7 +20,14 @@
                 </svg>
             </button>
             <span class="header-title admin-bookings-title">Agendamentos</span>
-            <div style="width: 44px;"></div>
+            <button class="btn-icon app-sidebar-toggle" type="button" data-sidebar-toggle aria-label="Abrir menu lateral">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="4" y1="7" x2="20" y2="7"></line>
+                    <line x1="7" y1="12" x2="20" y2="12"></line>
+                    <line x1="10" y1="17" x2="20" y2="17"></line>
+                </svg>
+            </button>
         </header>
 
         <section class="admin-controls-premium" aria-label="Controles de agendamento">
@@ -209,6 +216,7 @@
         </section>
     </div>
 
+    {% include "includes/app-sidebar.html" %}
     <div id="cancelBookingModal" class="booking-modal" aria-hidden="true">
         <div class="booking-modal-backdrop" data-close-cancel-modal="true"></div>
         <div class="booking-modal-content cancel-booking-modal-content">

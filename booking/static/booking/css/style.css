@@ -1346,3 +1346,205 @@ button.time-slot {
     opacity: 0;
     pointer-events: none;
 }
+
+.app-sidebar-toggle {
+    color: var(--color-primary-yellow);
+}
+
+.app-sidebar-toggle-floating {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1300;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(234, 88, 12, 0.18);
+    box-shadow: 0 10px 24px rgba(17, 24, 39, 0.12);
+}
+
+.app-sidebar-shell {
+    position: fixed;
+    inset: 0;
+    z-index: 1400;
+    display: none;
+}
+
+.app-sidebar-shell.open {
+    display: block;
+}
+
+.app-sidebar-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.42);
+    backdrop-filter: blur(2px);
+}
+
+.app-sidebar-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: min(340px, 88vw);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #fffdf8 0%, #ffffff 100%);
+    border-left: 1px solid rgba(234, 88, 12, 0.18);
+    box-shadow: -18px 0 40px rgba(17, 24, 39, 0.18);
+    padding: 24px 18px 20px 18px;
+    transform: translateX(100%);
+    transition: transform 0.24s ease;
+    overflow-y: auto;
+}
+
+.app-sidebar-shell.open .app-sidebar-panel {
+    transform: translateX(0);
+}
+
+.app-sidebar-close {
+    margin-left: auto;
+    color: #9a3412;
+    border: 1px solid rgba(234, 88, 12, 0.16);
+    background: rgba(255, 255, 255, 0.88);
+    width: 36px;
+    height: 36px;
+}
+
+.app-sidebar-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.app-sidebar-profile-top,
+.app-sidebar-anon-top {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.app-sidebar-anon-top {
+    margin-bottom: 18px;
+}
+
+.app-sidebar-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-accent);
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 700;
+    box-shadow: var(--box-shadow-glow);
+}
+
+.app-sidebar-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-text-dark);
+}
+
+.app-sidebar-email {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    word-break: break-word;
+}
+
+.app-sidebar-divider {
+    width: 100%;
+    height: 1px;
+    margin: 16px 0 14px 0;
+    background: linear-gradient(90deg, rgba(234, 88, 12, 0.12) 0%, rgba(234, 88, 12, 0.35) 50%, rgba(234, 88, 12, 0.12) 100%);
+}
+
+.app-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.app-sidebar-link {
+    display: flex;
+    align-items: center;
+    min-height: 46px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(234, 88, 12, 0.14);
+    background: rgba(255, 255, 255, 0.74);
+    color: #7c2d12;
+    font-weight: 600;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.app-sidebar-link:hover {
+    transform: translateX(-2px);
+    border-color: rgba(234, 88, 12, 0.3);
+    box-shadow: 0 8px 18px rgba(245, 158, 11, 0.14);
+}
+
+.app-sidebar-link-logout {
+    font: inherit;
+    cursor: pointer;
+    color: #b91c1c;
+    border-color: rgba(220, 38, 38, 0.18);
+    background: rgba(254, 242, 242, 0.9);
+}
+
+.app-sidebar-footer {
+    padding-top: 14px;
+    border-top: 1px solid rgba(234, 88, 12, 0.12);
+}
+
+#appLogoutModal {
+    z-index: 1500;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 24px;
+}
+
+.app-logout-modal-content {
+    position: relative;
+    max-width: 400px;
+    width: min(360px, calc(100vw - 32px));
+    margin: 0;
+    border-radius: 18px;
+    border: 1px solid rgba(234, 88, 12, 0.2);
+    background: linear-gradient(180deg, #fffdf7 0%, #ffffff 100%);
+    box-shadow: 0 20px 42px rgba(17, 24, 39, 0.2), 0 8px 22px rgba(245, 158, 11, 0.16);
+    padding: 18px 16px 16px 16px;
+}
+
+.app-logout-modal-header {
+    margin-bottom: 8px;
+}
+
+.app-logout-modal-title {
+    color: #9a3412;
+}
+
+.app-logout-modal-message {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.app-logout-modal-actions {
+    margin-top: 16px;
+}
+
+@media (max-width: 520px) {
+    #appLogoutModal {
+        align-items: flex-end;
+        justify-content: center;
+        padding: 12px;
+    }
+
+    .app-logout-modal-content {
+        width: 100%;
+    }
+}
+

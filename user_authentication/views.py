@@ -485,5 +485,4 @@ def redefinir_senha_view(request):
 
 def logout_view(request):
     logout(request)
-    messages.success(request, 'Logout realizado com sucesso!')
     return redirect('login')
