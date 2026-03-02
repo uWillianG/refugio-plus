@@ -1,4 +1,4 @@
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from urllib.parse import urlencode
 
 from django.contrib import messages
@@ -72,6 +72,21 @@ def booking_total_price(selected_date, start_hour, end_hour):
     base_price = BookingRules.price_for_date(selected_date)
     duration_hours = calculate_duration_hours(start_hour, end_hour)
     return base_price * duration_hours
+
+
+def booking_cancellation_deadline(booking):
+    start_at = datetime.combine(booking.date, booking.start_hour)
+    return timezone.make_aware(start_at, timezone.get_current_timezone()) - timedelta(hours=1)
+
+
+def user_can_cancel_booking(user, booking, now=None):
+    if getattr(user, "is_admin", False):
+        return True
+
+    if now is None:
+        now = timezone.localtime()
+
+    return now <= booking_cancellation_deadline(booking)
 
 
 def resolve_block_model():
@@ -373,6 +388,18 @@ class MyBookingsView(View):
         return rows
 
     @staticmethod
+    def _attach_cancellation_rules(rows, user):
+        now = timezone.localtime()
+
+        for row in rows:
+            row.can_cancel = user_can_cancel_booking(user, row, now=now)
+            row.cancel_block_reason = ""
+            if not row.can_cancel:
+                row.cancel_block_reason = "O cancelamento fica disponível somente até 1 hora antes do horário agendado."
+
+        return rows
+
+    @staticmethod
     def _context_for_user(request):
         now = timezone.localtime()
         today = now.date()
@@ -390,9 +417,13 @@ class MyBookingsView(View):
             base_queryset.filter(Q(is_active=False) | past_filter).order_by("-date", "-start_hour")
         )
 
+        current_rows = MyBookingsView._attach_price_display(current_rows)
+        current_rows = MyBookingsView._attach_cancellation_rules(current_rows, request.user)
+        past_rows = MyBookingsView._attach_price_display(past_rows)
+
         return {
-            "current_bookings": MyBookingsView._attach_price_display(current_rows),
-            "past_bookings": MyBookingsView._attach_price_display(past_rows),
+            "current_bookings": current_rows,
+            "past_bookings": past_rows,
         }
 
     @staticmethod
@@ -423,6 +454,10 @@ class MyBookingsView(View):
 
         if not booking:
             messages.error(request, "Não foi possível cancelar esse agendamento.")
+            return redirect("my_bookings")
+
+        if not user_can_cancel_booking(request.user, booking):
+            messages.error(request, "O cancelamento so pode ser feito ate 1 hora antes do horario agendado.")
             return redirect("my_bookings")
 
         booking.is_active = False

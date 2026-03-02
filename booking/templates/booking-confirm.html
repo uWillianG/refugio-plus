@@ -75,7 +75,7 @@
         {% endif %}
     </div>
 
-    {% if success_message %}
+    {% if success_message and request.user.is_authenticated %}
     <div id="toast-notification-success" class="toast toast-success" data-redirect-url="{{ success_redirect_url }}">
         <div class="toast-content">
             <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -84,6 +84,30 @@
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
             <span>{{ success_message }}</span>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if success_message and not request.user.is_authenticated %}
+    <div id="guestBookingSuccessModal" class="booking-modal open" aria-hidden="false">
+        <div class="booking-modal-backdrop" data-close-guest-success-modal="true"></div>
+        <div class="booking-modal-content">
+            <div class="booking-modal-header">
+                <p class="modal-court-name">Agendamento enviado</p>
+                <button class="btn-icon modal-close-btn" type="button" aria-label="Fechar"
+                    data-close-guest-success-modal="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <p class="text-secondary" style="margin-bottom: 20px;">
+                Seu agendamento foi encaminhado ao estabelecimento. Para confirmar a reserva, entre em contato pelo
+                Instagram ou crie uma conta para gerenciar seus agendamentos futuros.
+            </p>
+            <button type="button" class="btn btn-primary" data-close-guest-success-modal="true">Entendi</button>
         </div>
     </div>
     {% endif %}
@@ -103,6 +127,27 @@
                     }
                 }, 2500);
             }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const guestSuccessModal = document.getElementById('guestBookingSuccessModal');
+            if (!guestSuccessModal) {
+                return;
+            }
+
+            const closeGuestSuccessModal = () => {
+                guestSuccessModal.classList.remove('open');
+                guestSuccessModal.setAttribute('aria-hidden', 'true');
+
+                const redirectUrl = "{{ success_redirect_url|escapejs }}";
+                if (redirectUrl) {
+                    window.location = redirectUrl;
+                }
+            };
+
+            guestSuccessModal.querySelectorAll('[data-close-guest-success-modal="true"]').forEach((node) => {
+                node.addEventListener('click', closeGuestSuccessModal);
+            });
         });
 
         document.addEventListener('DOMContentLoaded', function () {

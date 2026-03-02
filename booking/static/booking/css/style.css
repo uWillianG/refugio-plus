@@ -807,6 +807,13 @@ button.time-slot {
     color: #ffffff;
 }
 
+.cancel-booking-btn:disabled {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
 #cancelBookingModal .booking-modal-backdrop {
     background: rgba(17, 24, 39, 0.54);
     backdrop-filter: blur(2px);
