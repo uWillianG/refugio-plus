@@ -40,27 +40,60 @@
             position: relative;
             z-index: 1;
             width: 100%;
-            max-width: 360px;
-            background: var(--color-bg-card);
-            border: var(--border-width) solid var(--color-warm-orange);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-glow-strong);
-            padding: 20px;
-            text-align: center;
+            max-width: 390px;
+            background:
+                radial-gradient(120% 120% at 0% 0%, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0) 58%),
+                linear-gradient(180deg, #fffdf8 0%, #ffffff 100%);
+            border: 1px solid rgba(234, 88, 12, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 24px 48px rgba(17, 24, 39, 0.22), 0 10px 24px rgba(245, 158, 11, 0.16);
+            padding: 18px 16px 16px 16px;
+            text-align: left;
+        }
+
+        .booking-modal__header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(234, 88, 12, 0.12);
         }
 
         .booking-modal__title {
-            margin-bottom: 8px;
+            margin-bottom: 0;
             color: var(--color-primary-yellow);
         }
 
         .booking-modal__description {
-            margin-bottom: 16px;
+            margin-bottom: 18px;
             color: var(--color-text-secondary);
+            text-align: left;
         }
 
-        .booking-modal__actions .btn:last-child {
+        .booking-modal__close {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid rgba(234, 88, 12, 0.14);
+            background: rgba(255, 255, 255, 0.88);
+            color: var(--color-warm-orange);
+            flex-shrink: 0;
+        }
+
+        .booking-modal__actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .booking-modal__actions .btn {
             margin-bottom: 0;
+        }
+
+        .booking-modal__actions .btn-secondary {
+            background: rgba(255, 255, 255, 0.9);
         }
     </style>
 </head>
@@ -98,12 +131,20 @@
     <div id="bookingAuthModal" class="booking-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="bookingModalTitle">
         <div class="booking-modal__backdrop" data-close-modal="true"></div>
         <div class="booking-modal__content card fade-in">
-            <h2 id="bookingModalTitle" class="booking-modal__title">Como deseja continuar?</h2>
+            <div class="booking-modal__header">
+                <h2 id="bookingModalTitle" class="booking-modal__title">Como deseja continuar?</h2>
+                <button type="button" class="btn-icon booking-modal__close" data-close-modal="true" aria-label="Fechar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
             <p class="booking-modal__description">Para agendar, você pode entrar na sua conta ou seguir sem login.</p>
             <div class="booking-modal__actions">
                 <a href="{% url 'login' %}" class="btn btn-primary">Entrar ou Cadastrar-se</a>
                 <a href="{% url 'booking' %}" class="btn btn-secondary">Seguir sem Login</a>
-                <button type="button" class="btn btn-secondary" data-close-modal="true">Cancelar</button>
             </div>
         </div>
     </div>
@@ -124,7 +165,7 @@
 
             openButton.addEventListener('click', openModal);
             modal.addEventListener('click', (event) => {
-                if (event.target.matches('[data-close-modal="true"]')) {
+                if (event.target.closest('[data-close-modal="true"]')) {
                     closeModal();
                 }
             });

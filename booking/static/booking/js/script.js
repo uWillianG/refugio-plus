@@ -223,7 +223,9 @@ function initializeBookingModal() {
             return;
         }
 
-        row.options.forEach((option) => {
+        row.options
+            .filter((option) => option.end_hour <= 23)
+            .forEach((option) => {
             const button = createChipButton(option.label, option.status === 'available');
 
             if (option.status === 'available') {
@@ -237,7 +239,7 @@ function initializeBookingModal() {
             }
 
             durationOptions.appendChild(button);
-        });
+            });
     }
 
     function openModal(courtId, courtName, startHour) {
@@ -338,5 +340,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeCalendar();
     initializeBookingModal();
 });
-
 

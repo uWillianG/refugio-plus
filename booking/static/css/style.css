@@ -377,6 +377,7 @@ button.time-slot {
     color: var(--color-text-dark);
     border-radius: 999px;
     padding: 8px 12px;
+    font-weight: 400;
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -684,4 +685,15 @@ button.time-slot {
 .date-calendar-day.empty {
     opacity: 0;
     pointer-events: none;
+}
+.app-sidebar-toggle {
+    background: var(--color-primary-yellow);
+    color: #ffffff;
+    box-shadow: 0 10px 24px rgba(245, 158, 11, 0.24);
+}
+
+.app-sidebar-toggle:hover,
+.app-sidebar-toggle:focus-visible {
+    background: var(--color-primary-yellow);
+    color: #ffffff;
 }

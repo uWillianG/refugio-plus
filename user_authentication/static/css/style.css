@@ -649,7 +649,15 @@ body.auth-page {
 }
 
 .app-sidebar-toggle {
-    color: var(--color-primary-yellow);
+    background: var(--color-primary-yellow);
+    color: #ffffff;
+    box-shadow: 0 10px 24px rgba(245, 158, 11, 0.24);
+}
+
+.app-sidebar-toggle:hover,
+.app-sidebar-toggle:focus-visible {
+    background: var(--color-primary-yellow);
+    color: #ffffff;
 }
 
 .app-sidebar-toggle-floating {
@@ -657,9 +665,7 @@ body.auth-page {
     top: 16px;
     right: 16px;
     z-index: 1300;
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid rgba(234, 88, 12, 0.18);
-    box-shadow: 0 10px 24px rgba(17, 24, 39, 0.12);
+    border: none;
 }
 
 .app-sidebar-shell {

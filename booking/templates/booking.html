@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="{% static 'booking/css/style.css' %}">
 </head>
 
-<body>
-    <div class="container fade-in">
-        <header class="app-header">
+<body class="booking-page">
+    <div class="container fade-in booking-page-container">
+        <header class="app-header booking-page-header">
             <button class="btn-icon" onclick="history.back()" type="button">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -30,7 +30,7 @@
             </button>
         </header>
 
-        <form id="dateForm" class="date-selector" method="get" action="{% url 'booking' %}">
+        <form id="dateForm" class="date-selector booking-page-date-selector" method="get" action="{% url 'booking' %}">
             <div>
                 <div class="text-secondary">Dia selecionado</div>
                 <span class="current-date">{{ selected_date_display }}</span>
@@ -84,13 +84,13 @@
             </div>
         </form>
 
-        <div id="courtsContainer">
+        <div id="courtsContainer" class="booking-page-courts">
             {% for court in courts %}
-            <article class="card court-card" data-court-id="{{ court.id }}" data-court-name="{{ court.name }}">
+            <article class="card court-card booking-page-court-card" data-court-id="{{ court.id }}" data-court-name="{{ court.name }}">
                 <div class="court-header">
                     <div>
                         <div class="court-name">{{ court.name }}</div>
-                        <div class="text-secondary">{{ court.description|default:"Quadra de areia" }}</div>
+                        
                     </div>
                 </div>
                 <div class="court-time-grid"></div>
@@ -105,7 +105,7 @@
 
     <div id="courtBookingModal" class="booking-modal" aria-hidden="true">
         <div class="booking-modal-backdrop" data-close-modal="true"></div>
-        <div class="booking-modal-content">
+        <div class="booking-modal-content booking-page-modal-content">
             <div class="booking-modal-header">
                 <div>
                     <p id="modalCourtName" class="modal-court-name"></p>

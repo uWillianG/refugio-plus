@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="{% static 'booking/css/style.css' %}">
 </head>
 
-<body>
-    <div class="container fade-in">
-        <header class="app-header">
+<body class="booking-confirm-page">
+    <div class="container fade-in booking-confirm-container">
+        <header class="app-header booking-confirm-header">
             <button class="btn-icon" onclick="history.back()" type="button">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -23,15 +23,12 @@
             <div style="width: 44px;"></div>
         </header>
 
-        <div class="card">
-            <div class="court-name">{{ selected_court_name }}</div>
+        <div class="card booking-confirm-hero-card booking-confirm-summary-card">
+            <div class="court-name booking-confirm-court-name">{{ selected_court_name }}</div>
             <p class="text-secondary">{{ selected_date_display }}</p>
-        </div>
-
-        <div class="card">
-            <p><strong>Esporte:</strong> {{ selected_sport_name }}</p>
-            <p><strong>Horário:</strong> {{ selected_start_time }} - {{ selected_end_time }}</p>
-            <p><strong>Valor:</strong> {{ booking_price_display }}</p>
+            <p class="booking-confirm-line"><strong>Esporte:</strong> {{ selected_sport_name }}</p>
+            <p class="booking-confirm-line"><strong>Horário:</strong> {{ selected_start_time }} - {{ selected_end_time }}</p>
+            <p class="booking-confirm-line booking-confirm-price"><strong>Valor:</strong> {{ booking_price_display }}</p>
         </div>
 
         {% if not success_message %}
@@ -44,7 +41,7 @@
             <input type="hidden" name="end_time" value="{{ selected_end_time }}">
 
             {% if not request.user.is_authenticated %}
-            <div class="card">
+            <div class="card booking-confirm-guest-card">
                 <label for="guest_name" class="confirm-label"><strong>Nome</strong></label>
                 <input id="guest_name" class="confirm-input" name="guest_name" type="text" value="{{ guest_name|default:'' }}">
 
@@ -55,21 +52,21 @@
             {% endif %}
 
             {% if form_error %}
-            <div class="card">
+            <div class="card booking-confirm-feedback-card">
                 <p class="confirm-error">{{ form_error }}</p>
             </div>
             {% endif %}
 
             {% if booking_warning %}
-            <div class="card confirm-warning-card">
+            <div class="card confirm-warning-card booking-confirm-feedback-card">
                 <p class="confirm-warning">{{ booking_warning }}</p>
             </div>
             {% endif %}
 
             {% if booking_warning %}
-            <a href="{% url 'booking' %}" class="btn btn-secondary" type="button">Escolher outro horário</a>
+            <a href="{% url 'booking' %}" class="btn btn-secondary booking-confirm-action-btn" type="button">Escolher outro horário</a>
             {% else %}
-            <button class="btn btn-primary" type="submit">Confirmar</button>
+            <button class="btn btn-primary booking-confirm-action-btn" type="submit">Confirmar</button>
             {% endif %}
         </form>
         {% endif %}
@@ -91,7 +88,7 @@
     {% if success_message and not request.user.is_authenticated %}
     <div id="guestBookingSuccessModal" class="booking-modal open" aria-hidden="false">
         <div class="booking-modal-backdrop" data-close-guest-success-modal="true"></div>
-        <div class="booking-modal-content">
+        <div class="booking-modal-content booking-confirm-success-modal-content">
             <div class="booking-modal-header">
                 <p class="modal-court-name">Agendamento enviado</p>
                 <button class="btn-icon modal-close-btn" type="button" aria-label="Fechar"
@@ -107,7 +104,7 @@
                 Seu agendamento foi encaminhado ao estabelecimento. Para confirmar a reserva, entre em contato pelo
                 Instagram ou crie uma conta para gerenciar seus agendamentos futuros.
             </p>
-            <button type="button" class="btn btn-primary" data-close-guest-success-modal="true">Entendi</button>
+            <button type="button" class="btn btn-primary booking-confirm-action-btn" data-close-guest-success-modal="true">Entendi</button>
         </div>
     </div>
     {% endif %}
