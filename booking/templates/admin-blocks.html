@@ -1,0 +1,281 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refúgio Plus - Bloqueios</title>
+    <link rel="stylesheet" href="{% static 'booking/css/style.css' %}">
+</head>
+
+<body class="admin-bookings-page admin-blocks-page">
+    <div class="container fade-in admin-bookings-container admin-blocks-container">
+        <header class="app-header admin-bookings-header">
+            <button class="btn-icon" onclick="window.location.href='{% url 'admin_bookings' %}'" type="button">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </button>
+            <span class="header-title admin-bookings-title">Bloquear horários</span>
+            <button class="btn-icon app-sidebar-toggle" type="button" data-sidebar-toggle aria-label="Abrir menu lateral">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="4" y1="7" x2="20" y2="7"></line>
+                    <line x1="7" y1="12" x2="20" y2="12"></line>
+                    <line x1="10" y1="17" x2="20" y2="17"></line>
+                </svg>
+            </button>
+        </header>
+
+        {% if messages %}
+        {% for message in messages %}
+        {% if "success" in message.tags %}
+        <div class="toast toast-success admin-blocks-success-toast" role="status" aria-live="polite">
+            <div class="toast-content">
+                <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <span>{{ message }}</span>
+            </div>
+        </div>
+        {% else %}
+        <div class="card admin-blocks-feedback-card">
+            <p>{{ message }}</p>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+
+        <section class="admin-blocks-layout" aria-label="Formulario e bloqueios ativos">
+            <article class="bookings-filter-card admin-toolbar-card admin-blocks-card admin-blocks-form-card">
+                <p class="modal-section-title">Novo bloqueio</p>
+                <p class="admin-blocks-form-help">Deixe os horários em branco para bloquear o dia inteiro.</p>
+
+                <form method="post" class="admin-blocks-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_block">
+                    <input type="hidden" id="blockContextDateInput" name="date" value="{{ selected_date_iso }}">
+                    <input type="hidden" name="court" value="{{ selected_court_id }}">
+                    <input type="hidden" id="blockCreateDateInput" name="block_date" value="{{ selected_date_iso }}">
+
+                    <div class="admin-blocks-grid">
+                        <select name="block_court_id" class="modal-select" required>
+                            <option value="">Selecione a quadra</option>
+                            <option value="all">Todas</option>
+                            {% for court in courts %}
+                            <option value="{{ court.id }}" {% if selected_court_id|stringformat:"s" == court.id|stringformat:"s" %}selected{% endif %}>{{ court.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="modal-select admin-blocks-calendar-field">
+                            <span id="blockDateDisplayLabel" class="admin-blocks-calendar-value">{{ selected_date_display }}</span>
+                            <div class="calendar-anchor">
+                                <button id="blockDatePickerButton" class="btn-icon calendar-icon" type="button"
+                                    aria-label="Selecionar data" aria-expanded="false" aria-controls="blockDateCalendarPanel">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                </button>
+
+                                <div id="blockDateCalendarPanel" class="date-calendar" role="dialog" aria-label="Selecionar data" hidden>
+                                    <div class="date-calendar-header">
+                                        <button id="blockCalendarPrevMonth" class="btn-icon date-calendar-nav" type="button"
+                                            aria-label="Mes anterior">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="15 18 9 12 15 6"></polyline>
+                                            </svg>
+                                        </button>
+                                        <span id="blockCalendarMonthLabel" class="date-calendar-month"></span>
+                                        <button id="blockCalendarNextMonth" class="btn-icon date-calendar-nav" type="button"
+                                            aria-label="Proximo mes">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="9 18 15 12 9 6"></polyline>
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <div class="date-calendar-weekdays">
+                                        <span>Dom</span>
+                                        <span>Seg</span>
+                                        <span>Ter</span>
+                                        <span>Qua</span>
+                                        <span>Qui</span>
+                                        <span>Sex</span>
+                                        <span>Sab</span>
+                                    </div>
+
+                                    <div id="blockCalendarDaysGrid" class="date-calendar-days"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="admin-blocks-time-row">
+                            <input name="block_start_time" type="time" class="modal-select admin-blocks-time-input" step="1800">
+                            <input name="block_end_time" type="time" class="modal-select admin-blocks-time-input" step="1800">
+                        </div>
+                    </div>
+
+                    <input name="block_reason" type="text" class="confirm-input admin-block-reason-input" placeholder="Motivo do bloqueio">
+                    <button type="submit" class="btn btn-primary admin-blocks-submit-btn">Bloquear horário</button>
+                </form>
+            </article>
+        </section>
+    </div>
+
+    {% include "includes/app-sidebar.html" %}
+    <script src="{% static 'booking/js/script.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const successToasts = document.querySelectorAll('.admin-blocks-success-toast');
+            successToasts.forEach(function (toast) {
+                setTimeout(function () {
+                    toast.classList.add('show');
+                }, 100);
+
+                setTimeout(function () {
+                    toast.classList.remove('show');
+                    toast.style.display = 'none';
+                }, 2600);
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const dateButton = document.getElementById('blockDatePickerButton');
+            const calendarPanel = document.getElementById('blockDateCalendarPanel');
+            const monthLabel = document.getElementById('blockCalendarMonthLabel');
+            const daysGrid = document.getElementById('blockCalendarDaysGrid');
+            const prevMonthButton = document.getElementById('blockCalendarPrevMonth');
+            const nextMonthButton = document.getElementById('blockCalendarNextMonth');
+            const displayLabel = document.getElementById('blockDateDisplayLabel');
+            const contextDateInput = document.getElementById('blockContextDateInput');
+            const createDateInput = document.getElementById('blockCreateDateInput');
+
+            if (!dateButton || !calendarPanel || !monthLabel || !daysGrid || !prevMonthButton || !nextMonthButton || !contextDateInput || !createDateInput) {
+                return;
+            }
+
+            const monthFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
+            const displayFormatter = new Intl.DateTimeFormat('pt-BR');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const selectedDate = createDateInput.value ? new Date(`${createDateInput.value}T00:00:00`) : new Date(today);
+            let selectedISO = createDateInput.value;
+            let viewYear = selectedDate.getFullYear();
+            let viewMonth = selectedDate.getMonth();
+
+            function toISO(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            function openCalendar() {
+                calendarPanel.hidden = false;
+                calendarPanel.classList.add('open');
+                dateButton.setAttribute('aria-expanded', 'true');
+            }
+
+            function closeCalendar() {
+                calendarPanel.classList.remove('open');
+                calendarPanel.hidden = true;
+                dateButton.setAttribute('aria-expanded', 'false');
+            }
+
+            function renderCalendar() {
+                const firstDay = new Date(viewYear, viewMonth, 1);
+                const monthStartWeekday = firstDay.getDay();
+                const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+                monthLabel.textContent = monthFormatter.format(firstDay);
+                monthLabel.textContent = monthLabel.textContent.charAt(0).toUpperCase() + monthLabel.textContent.slice(1);
+                daysGrid.innerHTML = '';
+
+                for (let i = 0; i < monthStartWeekday; i += 1) {
+                    const empty = document.createElement('span');
+                    empty.className = 'date-calendar-day empty';
+                    daysGrid.appendChild(empty);
+                }
+
+                for (let day = 1; day <= daysInMonth; day += 1) {
+                    const date = new Date(viewYear, viewMonth, day);
+                    const iso = toISO(date);
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'date-calendar-day';
+                    button.textContent = day;
+
+                    if (date < today) {
+                        button.disabled = true;
+                    }
+
+                    if (iso === toISO(today)) {
+                        button.classList.add('today');
+                    }
+
+                    if (iso === selectedISO) {
+                        button.classList.add('selected');
+                    }
+
+                    button.addEventListener('click', function () {
+                        selectedISO = iso;
+                        createDateInput.value = selectedISO;
+                        contextDateInput.value = selectedISO;
+                        if (displayLabel) {
+                            displayLabel.textContent = displayFormatter.format(date);
+                        }
+                        closeCalendar();
+                    });
+
+                    daysGrid.appendChild(button);
+                }
+            }
+
+            dateButton.addEventListener('click', function (event) {
+                event.stopPropagation();
+                if (calendarPanel.hidden) {
+                    renderCalendar();
+                    openCalendar();
+                } else {
+                    closeCalendar();
+                }
+            });
+
+            prevMonthButton.addEventListener('click', function () {
+                viewMonth -= 1;
+                if (viewMonth < 0) {
+                    viewMonth = 11;
+                    viewYear -= 1;
+                }
+                renderCalendar();
+            });
+
+            nextMonthButton.addEventListener('click', function () {
+                viewMonth += 1;
+                if (viewMonth > 11) {
+                    viewMonth = 0;
+                    viewYear += 1;
+                }
+                renderCalendar();
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!calendarPanel.hidden && !calendarPanel.contains(event.target) && !dateButton.contains(event.target)) {
+                    closeCalendar();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

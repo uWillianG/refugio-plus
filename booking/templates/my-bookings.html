@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{% static 'booking/css/style.css' %}">
 </head>
 
-<body>
+<body class="my-bookings-page">
     <div class="container fade-in">
         <header class="app-header">
             <a class="btn-icon" href="{% url 'booking' %}">
@@ -48,9 +48,22 @@
         <section id="current-bookings-section">
             {% if messages %}
             {% for message in messages %}
+            {% if "success" in message.tags %}
+            <div class="toast toast-success my-bookings-success-toast" role="status" aria-live="polite">
+                <div class="toast-content">
+                    <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <span>{{ message }}</span>
+                </div>
+            </div>
+            {% else %}
             <div class="card">
                 <p>{{ message }}</p>
             </div>
+            {% endif %}
             {% endfor %}
             {% endif %}
 
@@ -80,7 +93,7 @@
                 </form>
             </article>
             {% empty %}
-            <div class="card">
+            <div class="no-bookings-message no-bookings-message-plain">
                 <p>Voce não possui agendamentos atuais.</p>
             </div>
             {% endfor %}
@@ -90,7 +103,7 @@
             {% for booking in past_bookings %}
             <article class="card booking-item-card">
                 {% if booking.is_active %}
-                <span class="booking-status-label completed">Concluído</span>
+                <span class="booking-status-label completed">Concluí­do</span>
                 {% else %}
                 <span class="booking-status-label canceled">Cancelado</span>
                 {% endif %}
@@ -102,7 +115,7 @@
                 <p class="booking-item-meta"><strong>Valor:</strong> {{ booking.booking_price_display }}</p>
             </article>
             {% empty %}
-            <div class="card">
+            <div class="no-bookings-message no-bookings-message-plain">
                 <p>Voce ainda não possui agendamentos passados.</p>
             </div>
             {% endfor %}
@@ -134,7 +147,7 @@
                     </svg>
                 </button>
             </div>
-            <p class="cancel-modal-message">Tem certeza que deseja cancelar este agendamento?</p>
+            <p class="cancel-modal-message">Tem certeza que deseja cancelar este horário?</p>
             <div class="cancel-modal-actions">
                 <button id="keepBookingBtn" type="button"
                     class="btn btn-secondary cancel-modal-btn cancel-modal-btn-neutral">Voltar</button>
@@ -147,6 +160,18 @@
     {% include "includes/app-sidebar.html" %}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const successToasts = document.querySelectorAll('.my-bookings-success-toast');
+            successToasts.forEach(function (toast) {
+                setTimeout(function () {
+                    toast.classList.add('show');
+                }, 100);
+
+                setTimeout(function () {
+                    toast.classList.remove('show');
+                    toast.style.display = 'none';
+                }, 2600);
+            });
+
             const currentRadio = document.getElementById('tab-current');
             const pastRadio = document.getElementById('tab-past');
             const currentSection = document.getElementById('current-bookings-section');
@@ -213,3 +238,4 @@
 </body>
 
 </html>
+

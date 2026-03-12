@@ -35,10 +35,11 @@
         <nav class="app-sidebar-nav" aria-label="Navegação">
             {% if request.user.is_authenticated %}
             <a class="app-sidebar-link" href="{% url 'menu' %}">Início</a>
+            <a class="app-sidebar-link" href="{% url 'booking' %}">Horários</a>
             {% if request.user.is_authenticated and request.user.is_admin %}
             <a class="app-sidebar-link" href="{% url 'admin_bookings' %}">Administração</a>
+            <a class="app-sidebar-link" href="{% url 'admin_blocks' %}">Bloquear horários</a>
             {% endif %}
-            <a class="app-sidebar-link" href="{% url 'booking' %}">Horários</a>
             <a class="app-sidebar-link" href="{% url 'my_bookings' %}">Meus agendamentos</a>
             <a class="app-sidebar-link" href="{% static 'pdf/cardapio.pdf' %}">Cardápio</a>
             {% else %}

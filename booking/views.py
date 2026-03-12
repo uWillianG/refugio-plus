@@ -1,14 +1,15 @@
-from datetime import date, datetime, time, timedelta
+﻿from datetime import date, datetime, time, timedelta
 from urllib.parse import urlencode
 
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Q
 from django.urls import reverse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views import View
 
-from booking.models import courts, holidays, schedules, sports
+from booking.models import court_blocks, courts, holidays, schedules, sports
 
 
 class BookingRules:
@@ -90,7 +91,7 @@ def user_can_cancel_booking(user, booking, now=None):
 
 
 def resolve_block_model():
-    return None
+    return court_blocks
 
 
 def load_blocked_intervals(court_id, selected_date):
@@ -109,7 +110,18 @@ def load_blocked_intervals(court_id, selected_date):
 
     block_model = resolve_block_model()
     if block_model:
-        pass
+        block_rows = block_model.objects.filter(
+            court_id=court_id,
+            is_active=True,
+            start_at__date=selected_date,
+        ).values("start_at", "end_at")
+
+        for row in block_rows:
+            start_at = timezone.localtime(row["start_at"])
+            end_at = timezone.localtime(row["end_at"])
+            start_hour = start_at.hour + (start_at.minute / 60)
+            end_hour = end_at.hour + (end_at.minute / 60)
+            intervals.append((start_hour, end_hour))
 
     return intervals
 
@@ -195,9 +207,9 @@ class BookingView(View):
         sport_rows = list(sports.objects.values("id", "name"))
         if not sport_rows:
             sport_rows = [
-                {"id": 1, "name": "Vôlei"},
-                {"id": 2, "name": "Futevôlei"},
-                {"id": 3, "name": "Beach Tênnis"},
+                {"id": 1, "name": "VÃ´lei"},
+                {"id": 2, "name": "FutevÃ´lei"},
+                {"id": 3, "name": "Beach TÃªnnis"},
             ]
 
         availability_map = build_availability_map(court_rows, sport_rows, selected_date)
@@ -354,7 +366,7 @@ class BookingConfirmView(View):
                 payload,
                 guest_name=schedule_name,
                 guest_phone=request.POST.get("guest_phone", "").strip(),
-                booking_warning="Este horário para a quadra selecionada não está mais disponível. Verifique a disponibilidade atual através do botão abaixo.",
+                booking_warning="Este horÃ¡rio para a quadra selecionada nÃ£o estÃ¡ mais disponÃ­vel. Verifique a disponibilidade atual atravÃ©s do botÃ£o abaixo.",
             )
             return render(request, "booking-confirm.html", context)
 
@@ -395,7 +407,7 @@ class MyBookingsView(View):
             row.can_cancel = user_can_cancel_booking(user, row, now=now)
             row.cancel_block_reason = ""
             if not row.can_cancel:
-                row.cancel_block_reason = "O cancelamento fica disponível somente até 1 hora antes do horário agendado."
+                row.cancel_block_reason = "O cancelamento fica disponÃ­vel somente atÃ© 1 hora antes do horÃ¡rio agendado."
 
         return rows
 
@@ -457,7 +469,7 @@ class MyBookingsView(View):
             return redirect("my_bookings")
 
         if not user_can_cancel_booking(request.user, booking):
-            messages.error(request, "O cancelamento so pode ser feito ate 1 hora antes do horario agendado.")
+            messages.error(request, "O cancelamento so pode ser feito até 1 hora antes do horário agendado.")
             return redirect("my_bookings")
 
         booking.is_active = False
@@ -494,7 +506,7 @@ class AdminBookingsView(View):
                 row.customer_display = row.user_id.name
                 row.phone_display = row.user_id.phone
             else:
-                row.customer_display = "Não informado"
+                row.customer_display = "NÃ£o informado"
         return rows
 
     @staticmethod
@@ -505,7 +517,7 @@ class AdminBookingsView(View):
             elif row.user_id:
                 row.phone_display = row.user_id.phone
             else:
-                row.phone_display = "Não informado"
+                row.phone_display = "NÃ£o informado"
         return rows
 
     @staticmethod
@@ -541,6 +553,33 @@ class AdminBookingsView(View):
         if tab_value == "past":
             return "past"
         return "current"
+
+    @staticmethod
+    def _parse_time_value(raw_time):
+        if not raw_time:
+            return None
+        try:
+            return datetime.strptime(raw_time, "%H:%M").time()
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _list_active_blocks(selected_date, court_id=None):
+        queryset = court_blocks.objects.select_related("court_id").filter(
+            is_active=True,
+            start_at__date=selected_date,
+        )
+        if court_id:
+            queryset = queryset.filter(court_id_id=court_id)
+
+        rows = list(queryset.order_by("start_at"))
+        for row in rows:
+            local_start = timezone.localtime(row.start_at)
+            local_end = timezone.localtime(row.end_at)
+            row.block_date_display = local_start.strftime("%d/%m/%Y")
+            row.start_hour_display = local_start.strftime("%H:%M")
+            row.end_hour_display = local_end.strftime("%H:%M")
+        return rows
 
     @staticmethod
     def _build_redirect_url(selected_date, sport_id=None, court_id=None, selected_tab="current", customer_name="", customer_phone=""):
@@ -602,6 +641,7 @@ class AdminBookingsView(View):
         return {
             "current_bookings": current_rows,
             "past_bookings": past_rows,
+            "active_blocks": AdminBookingsView._list_active_blocks(selected_date, court_id=court_id),
             "selected_date_iso": selected_date.isoformat(),
             "selected_date_display": selected_date.strftime("%d/%m/%Y"),
             "sports": sports.objects.values("id", "name").order_by("name"),
@@ -653,6 +693,148 @@ class AdminBookingsView(View):
         selected_tab = AdminBookingsView._normalize_tab(request.POST.get("tab"))
         customer_name = request.POST.get("customer", "")
         customer_phone = request.POST.get("phone_number", "")
+        action = request.POST.get("action", "cancel_booking")
+
+        if action == "create_block":
+            block_court_id = AdminBookingsView._parse_optional_int(request.POST.get("block_court_id"))
+            block_date = parse_selected_date(request.POST.get("block_date"))
+            block_start_time = AdminBookingsView._parse_time_value(request.POST.get("block_start_time"))
+            block_end_time = AdminBookingsView._parse_time_value(request.POST.get("block_end_time"))
+            block_reason = (request.POST.get("block_reason") or "").strip() or "Bloqueio administrativo"
+
+            if not block_court_id or not block_start_time or not block_end_time:
+                messages.error(request, "Preencha quadra, horário inicial e horário final para bloquear.")
+                return redirect(
+                    AdminBookingsView._build_redirect_url(
+                        selected_date,
+                        sport_id=selected_sport_id,
+                        court_id=selected_court_id,
+                        selected_tab=selected_tab,
+                        customer_name=customer_name,
+                        customer_phone=customer_phone,
+                    )
+                )
+
+            if block_end_time <= block_start_time:
+                messages.error(request, "O horário final deve ser maior que o horário inicial.")
+                return redirect(
+                    AdminBookingsView._build_redirect_url(
+                        block_date,
+                        sport_id=selected_sport_id,
+                        court_id=selected_court_id,
+                        selected_tab=selected_tab,
+                        customer_name=customer_name,
+                        customer_phone=customer_phone,
+                    )
+                )
+
+            start_at = timezone.make_aware(datetime.combine(block_date, block_start_time), timezone.get_current_timezone())
+            end_at = timezone.make_aware(datetime.combine(block_date, block_end_time), timezone.get_current_timezone())
+
+            has_schedule_conflict = schedules.objects.filter(
+                court_id_id=block_court_id,
+                date=block_date,
+                is_active=True,
+                start_hour__lt=block_end_time,
+                end_hour__gt=block_start_time,
+            ).exists()
+            if has_schedule_conflict:
+                messages.error(request, "Já existe agendamento ativo no intervalo informado.")
+                return redirect(
+                    AdminBookingsView._build_redirect_url(
+                        block_date,
+                        sport_id=selected_sport_id,
+                        court_id=selected_court_id,
+                        selected_tab=selected_tab,
+                        customer_name=customer_name,
+                        customer_phone=customer_phone,
+                    )
+                )
+
+            has_block_conflict = court_blocks.objects.filter(
+                court_id_id=block_court_id,
+                is_active=True,
+                start_at__lt=end_at,
+                end_at__gt=start_at,
+            ).exists()
+            if has_block_conflict:
+                messages.error(request, "Já existe bloqueio ativo no intervalo informado.")
+                return redirect(
+                    AdminBookingsView._build_redirect_url(
+                        block_date,
+                        sport_id=selected_sport_id,
+                        court_id=selected_court_id,
+                        selected_tab=selected_tab,
+                        customer_name=customer_name,
+                        customer_phone=customer_phone,
+                    )
+                )
+
+            court_blocks.objects.create(
+                court_id_id=block_court_id,
+                start_at=start_at,
+                end_at=end_at,
+                reason=block_reason,
+                is_active=True,
+            )
+            messages.success(request, "Horário bloqueado com sucesso.")
+            return redirect(
+                AdminBookingsView._build_redirect_url(
+                    block_date,
+                    sport_id=selected_sport_id,
+                    court_id=selected_court_id,
+                    selected_tab=selected_tab,
+                    customer_name=customer_name,
+                    customer_phone=customer_phone,
+                )
+            )
+
+        if action == "remove_block":
+            block_id = request.POST.get("block_id")
+            try:
+                block_id = int(block_id)
+            except (TypeError, ValueError):
+                messages.error(request, "Bloqueio inválido.")
+                return redirect(
+                    AdminBookingsView._build_redirect_url(
+                        selected_date,
+                        sport_id=selected_sport_id,
+                        court_id=selected_court_id,
+                        selected_tab=selected_tab,
+                        customer_name=customer_name,
+                        customer_phone=customer_phone,
+                    )
+                )
+
+            block = court_blocks.objects.filter(id=block_id, is_active=True).first()
+            if not block:
+                messages.error(request, "Bloqueio não encontrado.")
+                return redirect(
+                    AdminBookingsView._build_redirect_url(
+                        selected_date,
+                        sport_id=selected_sport_id,
+                        court_id=selected_court_id,
+                        selected_tab=selected_tab,
+                        customer_name=customer_name,
+                        customer_phone=customer_phone,
+                    )
+                )
+
+            block.is_active = False
+            block.cancelled_at = timezone.now()
+            block.save(update_fields=["is_active", "cancelled_at", "updated_at"])
+            messages.success(request, "Bloqueio cancelado com sucesso.")
+            return redirect(
+                AdminBookingsView._build_redirect_url(
+                    selected_date,
+                    sport_id=selected_sport_id,
+                    court_id=selected_court_id,
+                    selected_tab=selected_tab,
+                    customer_name=customer_name,
+                    customer_phone=customer_phone,
+                )
+            )
+
         schedule_id = request.POST.get("schedule_id")
         try:
             schedule_id = int(schedule_id)
@@ -701,3 +883,154 @@ class AdminBookingsView(View):
             customer_phone=customer_phone,
         )
         return render(request, "admin-bookings.html", context)
+
+
+class AdminBlocksView(View):
+    @staticmethod
+    def _build_redirect_url(selected_date, court_id=None):
+        query_params = {
+            "date": selected_date.isoformat(),
+            "court": court_id or "",
+        }
+        return f"{reverse('admin_blocks')}?{urlencode(query_params)}"
+
+    @staticmethod
+    def _context(selected_date, selected_court_id=None):
+        return {
+            "selected_date_iso": selected_date.isoformat(),
+            "selected_date_display": selected_date.strftime("%d/%m/%Y"),
+            "selected_court_id": selected_court_id or "",
+            "courts": courts.objects.values("id", "name").order_by("name"),
+            "active_blocks": AdminBookingsView._list_active_blocks(selected_date, court_id=selected_court_id),
+        }
+
+    @staticmethod
+    def get(request):
+        if not request.user.is_authenticated:
+            return redirect("login")
+
+        if not AdminBookingsView._user_is_admin(request):
+            messages.error(request, "Acesso restrito a administradores.")
+            return redirect("menu")
+
+        selected_date = parse_selected_date(request.GET.get("date"))
+        selected_court_id = AdminBookingsView._parse_optional_int(request.GET.get("court"))
+        context = AdminBlocksView._context(selected_date, selected_court_id=selected_court_id)
+        return render(request, "admin-blocks.html", context)
+
+    @staticmethod
+    def post(request):
+        if not request.user.is_authenticated:
+            return redirect("login")
+
+        if not AdminBookingsView._user_is_admin(request):
+            messages.error(request, "Acesso restrito a administradores.")
+            return redirect("menu")
+
+        selected_date = parse_selected_date(request.POST.get("date"))
+        selected_court_id = AdminBookingsView._parse_optional_int(request.POST.get("court"))
+        action = request.POST.get("action", "create_block")
+
+        if action == "remove_block":
+            block_id = request.POST.get("block_id")
+            try:
+                block_id = int(block_id)
+            except (TypeError, ValueError):
+                messages.error(request, "Bloqueio inválido.")
+                return redirect(AdminBlocksView._build_redirect_url(selected_date, court_id=selected_court_id))
+
+            block = court_blocks.objects.filter(id=block_id, is_active=True).first()
+            if not block:
+                messages.error(request, "Bloqueio não encontrado.")
+                return redirect(AdminBlocksView._build_redirect_url(selected_date, court_id=selected_court_id))
+
+            block_date = timezone.localtime(block.start_at).date()
+            block.is_active = False
+            block.cancelled_at = timezone.now()
+            block.save(update_fields=["is_active", "cancelled_at", "updated_at"])
+            messages.success(request, "Bloqueio cancelado com sucesso.")
+            return redirect(AdminBlocksView._build_redirect_url(block_date, court_id=selected_court_id))
+
+        raw_block_court_id = (request.POST.get("block_court_id") or "").strip()
+        block_court_id = AdminBookingsView._parse_optional_int(raw_block_court_id)
+        apply_to_all_courts = raw_block_court_id == "all"
+        block_date = parse_selected_date(request.POST.get("block_date"))
+        block_start_time = AdminBookingsView._parse_time_value(request.POST.get("block_start_time"))
+        block_end_time = AdminBookingsView._parse_time_value(request.POST.get("block_end_time"))
+        block_reason = (request.POST.get("block_reason") or "").strip() or "Bloqueio administrativo"
+
+        if (not block_court_id and not apply_to_all_courts):
+            messages.error(request, "Preencha a quadra para bloquear.")
+            return redirect(AdminBlocksView._build_redirect_url(selected_date, court_id=selected_court_id))
+
+        # If no time range is provided, block the entire selected day.
+        if not block_start_time and not block_end_time:
+            block_start_time = time(hour=0, minute=0)
+            block_end_time = time(hour=23, minute=59)
+        elif (block_start_time and not block_end_time) or (block_end_time and not block_start_time):
+            messages.error(request, "Informe os dois horários ou deixe ambos vazios para bloquear o dia todo.")
+            return redirect(AdminBlocksView._build_redirect_url(selected_date, court_id=selected_court_id))
+
+        if block_end_time <= block_start_time:
+            messages.error(request, "O horário final deve ser maior que o horário inicial.")
+            return redirect(AdminBlocksView._build_redirect_url(block_date, court_id=selected_court_id))
+
+        start_at = timezone.make_aware(datetime.combine(block_date, block_start_time), timezone.get_current_timezone())
+        end_at = timezone.make_aware(datetime.combine(block_date, block_end_time), timezone.get_current_timezone())
+
+        target_court_ids = []
+        if apply_to_all_courts:
+            target_court_ids = list(courts.objects.values_list("id", flat=True))
+        elif block_court_id:
+            target_court_ids = [block_court_id]
+
+        if not target_court_ids:
+            messages.error(request, "Nenhuma quadra disponível para bloqueio.")
+            return redirect(AdminBlocksView._build_redirect_url(block_date, court_id=selected_court_id))
+
+        has_schedule_conflict = schedules.objects.filter(
+            court_id_id__in=target_court_ids,
+            date=block_date,
+            is_active=True,
+            start_hour__lt=block_end_time,
+            end_hour__gt=block_start_time,
+        ).exists()
+        if has_schedule_conflict:
+            if apply_to_all_courts:
+                messages.error(request, "Existe agendamento ativo em pelo menos uma quadra no intervalo informado.")
+            else:
+                messages.error(request, "Existe agendamento ativo na quadra no intervalo informado.")
+            return redirect(AdminBlocksView._build_redirect_url(block_date, court_id=selected_court_id))
+
+        has_block_conflict = court_blocks.objects.filter(
+            court_id_id__in=target_court_ids,
+            is_active=True,
+            start_at__lt=end_at,
+            end_at__gt=start_at,
+        ).exists()
+        if has_block_conflict:
+            if apply_to_all_courts:
+                messages.error(request, "Já existe bloqueio ativo em pelo menos uma quadra no intervalo informado.")
+            else:
+                messages.error(request, "Já existe bloqueio ativo no intervalo informado.")
+            return redirect(AdminBlocksView._build_redirect_url(block_date, court_id=selected_court_id))
+
+        block_rows = [
+            court_blocks(
+                court_id_id=court_id,
+                start_at=start_at,
+                end_at=end_at,
+                reason=block_reason,
+                is_active=True,
+            )
+            for court_id in target_court_ids
+        ]
+        with transaction.atomic():
+            court_blocks.objects.bulk_create(block_rows)
+
+        if apply_to_all_courts:
+            messages.success(request, "Horários bloqueados com sucesso.")
+        else:
+            messages.success(request, "Horário bloqueado com sucesso.")
+        return redirect(AdminBlocksView._build_redirect_url(block_date, court_id=selected_court_id))
+
