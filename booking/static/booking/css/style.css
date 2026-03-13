@@ -1520,13 +1520,16 @@ button.time-slot {
 .admin-bookings-page.admin-blocks-page .admin-blocks-time-row {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 160px));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
-    justify-content: start;
+    width: 100%;
+    justify-content: stretch;
 }
 
 .admin-bookings-page.admin-blocks-page .admin-blocks-time-input {
     width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .admin-bookings-page.admin-blocks-page .admin-blocks-submit-btn {
@@ -1602,6 +1605,13 @@ button.time-slot {
 
     .admin-bookings-page.admin-blocks-page .admin-blocks-time-row {
         grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+
+    .admin-bookings-page.admin-blocks-page .admin-blocks-time-input {
+        min-height: 38px;
+        padding: 8px 8px;
+        font-size: 13px;
     }
 }
 /* New Calendar */
