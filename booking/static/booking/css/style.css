@@ -1605,10 +1605,10 @@ button.time-slot {
 
     .admin-bookings-page.admin-blocks-page .admin-blocks-time-row {
         display: flex;
-        gap: 6px;
-        width: 92%;
-        justify-content: start;
-        margin-right: auto;
+        gap: 8px;
+        width: 100%;
+        justify-content: stretch;
+        margin-right: 0;
     }
 
     .admin-bookings-page.admin-blocks-page .admin-blocks-time-input {
