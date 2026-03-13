@@ -1609,16 +1609,9 @@ button.time-slot {
     }
 
     .admin-bookings-page.admin-blocks-page .admin-blocks-time-input {
-        min-height: 38px;
-        padding: 8px 8px;
-        font-size: 13px;
-    }
-}
-
-@media (max-width: 480px) {
-    .admin-bookings-page.admin-blocks-page .admin-blocks-time-row {
-        grid-template-columns: 1fr;
-        gap: 8px;
+        min-height: 34px;
+        padding: 6px 6px;
+        font-size: 12px;
     }
 }
 /* New Calendar */
