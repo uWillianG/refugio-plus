@@ -1614,6 +1614,13 @@ button.time-slot {
         font-size: 13px;
     }
 }
+
+@media (max-width: 480px) {
+    .admin-bookings-page.admin-blocks-page .admin-blocks-time-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+}
 /* New Calendar */
 .calendar-anchor {
     position: relative;
