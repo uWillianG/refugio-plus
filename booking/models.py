@@ -31,10 +31,22 @@ class court_blocks(models.Model):
     start_at = models.DateTimeField()
     end_at = models.DateTimeField()
     reason = models.CharField(max_length=200)
+    is_fixed = models.BooleanField(default=False)
+    fixed_weekday = models.PositiveSmallIntegerField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
+
+
+class court_block_exceptions(models.Model):
+    id = models.AutoField(primary_key=True)
+    block_id = models.ForeignKey(court_blocks, on_delete=models.CASCADE, related_name='exceptions')
+    skip_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('block_id', 'skip_date')
 
 class holidays(models.Model):
     id = models.AutoField(primary_key=True)

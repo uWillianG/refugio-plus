@@ -9,7 +9,7 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views import View
 
-from booking.models import court_blocks, courts, holidays, schedules, sports
+from booking.models import court_block_exceptions, court_blocks, courts, holidays, schedules, sports
 
 
 class BookingRules:
@@ -94,6 +94,34 @@ def resolve_block_model():
     return court_blocks
 
 
+def python_weekday_to_django(weekday_value):
+    return ((weekday_value + 1) % 7) + 1
+
+
+def weekday_label(weekday_value):
+    labels = [
+        "segunda-feira",
+        "terca-feira",
+        "quarta-feira",
+        "quinta-feira",
+        "sexta-feira",
+        "sabado",
+        "domingo",
+    ]
+    return labels[weekday_value]
+
+
+def active_block_queryset_for_date(selected_date):
+    return court_blocks.objects.filter(
+        is_active=True,
+    ).filter(
+        Q(start_at__date=selected_date)
+        | Q(is_fixed=True, fixed_weekday=selected_date.weekday(), start_at__date__lte=selected_date)
+    ).exclude(
+        exceptions__skip_date=selected_date
+    )
+
+
 def load_blocked_intervals(court_id, selected_date):
     intervals = []
 
@@ -110,10 +138,8 @@ def load_blocked_intervals(court_id, selected_date):
 
     block_model = resolve_block_model()
     if block_model:
-        block_rows = block_model.objects.filter(
+        block_rows = active_block_queryset_for_date(selected_date).filter(
             court_id=court_id,
-            is_active=True,
-            start_at__date=selected_date,
         ).values("start_at", "end_at")
 
         for row in block_rows:
@@ -565,10 +591,7 @@ class AdminBookingsView(View):
 
     @staticmethod
     def _list_active_blocks(selected_date, court_id=None):
-        queryset = court_blocks.objects.select_related("court_id").filter(
-            is_active=True,
-            start_at__date=selected_date,
-        )
+        queryset = active_block_queryset_for_date(selected_date).select_related("court_id")
         if court_id:
             queryset = queryset.filter(court_id_id=court_id)
 
@@ -576,9 +599,12 @@ class AdminBookingsView(View):
         for row in rows:
             local_start = timezone.localtime(row.start_at)
             local_end = timezone.localtime(row.end_at)
-            row.block_date_display = local_start.strftime("%d/%m/%Y")
+            row.block_date_display = selected_date.strftime("%d/%m/%Y")
             row.start_hour_display = local_start.strftime("%H:%M")
             row.end_hour_display = local_end.strftime("%H:%M")
+            row.fixed_label = ""
+            if row.is_fixed and row.fixed_weekday is not None:
+                row.fixed_label = f"Fixo toda {weekday_label(row.fixed_weekday)}"
         return rows
 
     @staticmethod
@@ -791,6 +817,7 @@ class AdminBookingsView(View):
 
         if action == "remove_block":
             block_id = request.POST.get("block_id")
+            block_cancel_scope = request.POST.get("block_cancel_scope", "permanent")
             try:
                 block_id = int(block_id)
             except (TypeError, ValueError):
@@ -820,10 +847,30 @@ class AdminBookingsView(View):
                     )
                 )
 
+            if block.is_fixed and block_cancel_scope == "this_week":
+                court_block_exceptions.objects.get_or_create(
+                    block_id=block,
+                    skip_date=selected_date,
+                )
+                messages.success(request, "Bloqueio fixo cancelado apenas para esta semana.")
+                return redirect(
+                    AdminBookingsView._build_redirect_url(
+                        selected_date,
+                        sport_id=selected_sport_id,
+                        court_id=selected_court_id,
+                        selected_tab=selected_tab,
+                        customer_name=customer_name,
+                        customer_phone=customer_phone,
+                    )
+                )
+
             block.is_active = False
             block.cancelled_at = timezone.now()
             block.save(update_fields=["is_active", "cancelled_at", "updated_at"])
-            messages.success(request, "Bloqueio cancelado com sucesso.")
+            if block.is_fixed:
+                messages.success(request, "Bloqueio fixo cancelado definitivamente.")
+            else:
+                messages.success(request, "Bloqueio cancelado com sucesso.")
             return redirect(
                 AdminBookingsView._build_redirect_url(
                     selected_date,
@@ -958,6 +1005,7 @@ class AdminBlocksView(View):
         block_start_time = AdminBookingsView._parse_time_value(request.POST.get("block_start_time"))
         block_end_time = AdminBookingsView._parse_time_value(request.POST.get("block_end_time"))
         block_reason = (request.POST.get("block_reason") or "").strip() or "Bloqueio administrativo"
+        is_fixed = request.POST.get("block_is_fixed") == "true"
 
         if (not block_court_id and not apply_to_all_courts):
             messages.error(request, "Preencha a quadra para bloquear.")
@@ -977,6 +1025,8 @@ class AdminBlocksView(View):
 
         start_at = timezone.make_aware(datetime.combine(block_date, block_start_time), timezone.get_current_timezone())
         end_at = timezone.make_aware(datetime.combine(block_date, block_end_time), timezone.get_current_timezone())
+        block_weekday = block_date.weekday()
+        django_weekday = python_weekday_to_django(block_weekday)
 
         target_court_ids = []
         if apply_to_all_courts:
@@ -988,13 +1038,18 @@ class AdminBlocksView(View):
             messages.error(request, "Nenhuma quadra disponível para bloqueio.")
             return redirect(AdminBlocksView._build_redirect_url(block_date, court_id=selected_court_id))
 
-        has_schedule_conflict = schedules.objects.filter(
+        schedule_conflict_filter = Q(
             court_id_id__in=target_court_ids,
-            date=block_date,
             is_active=True,
             start_hour__lt=block_end_time,
             end_hour__gt=block_start_time,
-        ).exists()
+        )
+        if is_fixed:
+            schedule_conflict_filter &= Q(date__gte=block_date, date__week_day=django_weekday)
+        else:
+            schedule_conflict_filter &= Q(date=block_date)
+
+        has_schedule_conflict = schedules.objects.filter(schedule_conflict_filter).exists()
         if has_schedule_conflict:
             if apply_to_all_courts:
                 messages.error(request, "Existe agendamento ativo em pelo menos uma quadra no intervalo informado.")
@@ -1002,12 +1057,24 @@ class AdminBlocksView(View):
                 messages.error(request, "Existe agendamento ativo na quadra no intervalo informado.")
             return redirect(AdminBlocksView._build_redirect_url(block_date, court_id=selected_court_id))
 
-        has_block_conflict = court_blocks.objects.filter(
+        block_conflict_filter = Q(
             court_id_id__in=target_court_ids,
             is_active=True,
             start_at__lt=end_at,
             end_at__gt=start_at,
-        ).exists()
+        )
+        if is_fixed:
+            block_conflict_filter &= (
+                Q(is_fixed=True, fixed_weekday=block_weekday)
+                | Q(start_at__date__gte=block_date, start_at__week_day=django_weekday)
+            )
+        else:
+            block_conflict_filter &= (
+                Q(start_at__date=block_date)
+                | Q(is_fixed=True, fixed_weekday=block_weekday, start_at__date__lte=block_date)
+            )
+
+        has_block_conflict = court_blocks.objects.filter(block_conflict_filter).exists()
         if has_block_conflict:
             if apply_to_all_courts:
                 messages.error(request, "Já existe bloqueio ativo em pelo menos uma quadra no intervalo informado.")
@@ -1021,6 +1088,8 @@ class AdminBlocksView(View):
                 start_at=start_at,
                 end_at=end_at,
                 reason=block_reason,
+                is_fixed=is_fixed,
+                fixed_weekday=block_weekday if is_fixed else None,
                 is_active=True,
             )
             for court_id in target_court_ids
@@ -1029,8 +1098,14 @@ class AdminBlocksView(View):
             court_blocks.objects.bulk_create(block_rows)
 
         if apply_to_all_courts:
-            messages.success(request, "Horários bloqueados com sucesso.")
+            if is_fixed:
+                messages.success(request, "Bloqueios fixos criados com sucesso.")
+            else:
+                messages.success(request, "Horários bloqueados com sucesso.")
         else:
-            messages.success(request, "Horário bloqueado com sucesso.")
+            if is_fixed:
+                messages.success(request, "Bloqueio fixo criado com sucesso.")
+            else:
+                messages.success(request, "Horário bloqueado com sucesso.")
         return redirect(AdminBlocksView._build_redirect_url(block_date, court_id=selected_court_id))
 

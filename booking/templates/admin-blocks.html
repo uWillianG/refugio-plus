@@ -125,6 +125,12 @@
                     </div>
 
                     <input name="block_reason" type="text" class="confirm-input admin-block-reason-input" placeholder="Motivo do bloqueio">
+                    <label class="admin-blocks-toggle-row" for="blockIsFixed">
+                        <span class="admin-blocks-toggle-label">Fixo?</span>
+                        <input type="hidden" name="block_is_fixed" value="false">
+                        <input id="blockIsFixed" name="block_is_fixed" type="checkbox" value="true" class="admin-blocks-toggle-input">
+                        <span class="admin-blocks-toggle-ui" aria-hidden="true"></span>
+                    </label>
                     <button type="submit" class="btn btn-primary admin-blocks-submit-btn">Bloquear horário</button>
                 </form>
             </article>

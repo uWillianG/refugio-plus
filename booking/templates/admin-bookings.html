@@ -173,17 +173,21 @@
                 <p class="booking-item-meta"><strong>Data:</strong> {{ block.block_date_display }}</p>
                 <p class="booking-item-meta"><strong>Horário:</strong> {{ block.start_hour_display }} - {{ block.end_hour_display }}</p>
                 <p class="booking-item-meta"><strong>Motivo:</strong> {{ block.reason }}</p>
+                {% if block.fixed_label %}
+                <p class="booking-item-meta"><strong>Recorrência:</strong> {{ block.fixed_label }}</p>
+                {% endif %}
                 <form method="post" class="cancel-booking-form" data-cancel-form>
                     {% csrf_token %}
                     <input type="hidden" name="action" value="remove_block">
                     <input type="hidden" name="block_id" value="{{ block.id }}">
+                    <input type="hidden" name="block_cancel_scope" value="permanent" data-block-cancel-scope>
                     <input type="hidden" name="date" value="{{ selected_date_iso }}">
                     <input type="hidden" name="sport" value="{{ selected_sport_id }}">
                     <input type="hidden" name="court" value="{{ selected_court_id }}">
                     <input type="hidden" name="tab" value="{{ selected_tab }}">
                     <input type="hidden" name="customer" value="{{ selected_customer_name }}">
                     <input type="hidden" name="phone_number" value="{{ selected_customer_phone }}">
-                    <button type="button" class="cancel-booking-btn" data-open-cancel-modal>
+                    <button type="button" class="cancel-booking-btn" data-open-cancel-modal {% if block.fixed_label %}data-block-fixed="true"{% endif %}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <circle cx="12" cy="12" r="10"></circle>
@@ -294,6 +298,37 @@
                     class="btn btn-secondary cancel-modal-btn cancel-modal-btn-neutral">Voltar</button>
                 <button id="confirmCancelBtn" type="button"
                     class="btn btn-primary cancel-modal-btn cancel-modal-btn-danger">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="fixedBlockScopeModal" class="booking-modal" aria-hidden="true">
+        <div class="booking-modal-backdrop" data-close-fixed-scope-modal="true"></div>
+        <div class="booking-modal-content cancel-booking-modal-content">
+            <div class="booking-modal-header cancel-booking-modal-header">
+                <div class="cancel-modal-title-wrap">
+                    <span class="cancel-modal-icon" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <circle cx="12" cy="17" r="1"></circle>
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        </svg>
+                    </span>
+                    <p class="modal-court-name cancel-modal-title">Cancelar bloqueio fixo</p>
+                </div>
+                <button id="closeFixedScopeModal" class="btn-icon modal-close-btn" type="button" aria-label="Fechar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <p class="cancel-modal-message">Deseja cancelar o bloqueio apenas para esta semana ou definitivamente?</p>
+            <div class="cancel-modal-actions admin-fixed-scope-actions">
+                <button id="cancelThisWeekBtn" type="button" class="btn btn-secondary cancel-modal-btn cancel-modal-btn-neutral">Esta semana</button>
+                <button id="cancelForeverBtn" type="button" class="btn btn-primary cancel-modal-btn cancel-modal-btn-danger">Em definitivo</button>
             </div>
         </div>
     </div>
@@ -414,6 +449,10 @@
             const closeModalBtn = document.getElementById('closeCancelModal');
             const keepBookingBtn = document.getElementById('keepBookingBtn');
             const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+            const fixedScopeModal = document.getElementById('fixedBlockScopeModal');
+            const closeFixedScopeModalBtn = document.getElementById('closeFixedScopeModal');
+            const cancelThisWeekBtn = document.getElementById('cancelThisWeekBtn');
+            const cancelForeverBtn = document.getElementById('cancelForeverBtn');
             let pendingCancelForm = null;
 
             function openModal(form) {
@@ -423,30 +462,49 @@
             }
 
             function closeModal() {
-                pendingCancelForm = null;
                 modal.classList.remove('open');
                 modal.setAttribute('aria-hidden', 'true');
+            }
+
+            function dismissCancelModal() {
+                pendingCancelForm = null;
+                closeModal();
+            }
+
+            function openFixedScopeModal(form) {
+                pendingCancelForm = form;
+                fixedScopeModal.classList.add('open');
+                fixedScopeModal.setAttribute('aria-hidden', 'false');
+            }
+
+            function closeFixedScopeModal() {
+                fixedScopeModal.classList.remove('open');
+                fixedScopeModal.setAttribute('aria-hidden', 'true');
             }
 
             document.querySelectorAll('[data-open-cancel-modal]').forEach((button) => {
                 button.addEventListener('click', function () {
                     const form = button.closest('[data-cancel-form]');
                     if (form) {
-                        openModal(form);
+                        if (button.getAttribute('data-block-fixed') === 'true') {
+                            openFixedScopeModal(form);
+                        } else {
+                            openModal(form);
+                        }
                     }
                 });
             });
 
             document.querySelectorAll('[data-close-cancel-modal="true"]').forEach((node) => {
-                node.addEventListener('click', closeModal);
+                node.addEventListener('click', dismissCancelModal);
             });
 
             if (closeModalBtn) {
-                closeModalBtn.addEventListener('click', closeModal);
+                closeModalBtn.addEventListener('click', dismissCancelModal);
             }
 
             if (keepBookingBtn) {
-                keepBookingBtn.addEventListener('click', closeModal);
+                keepBookingBtn.addEventListener('click', dismissCancelModal);
             }
 
             if (confirmCancelBtn) {
@@ -454,6 +512,50 @@
                     if (pendingCancelForm) {
                         pendingCancelForm.submit();
                     }
+                });
+            }
+
+            if (fixedScopeModal) {
+                fixedScopeModal.querySelectorAll('[data-close-fixed-scope-modal="true"]').forEach((node) => {
+                    node.addEventListener('click', function () {
+                        pendingCancelForm = null;
+                        closeFixedScopeModal();
+                    });
+                });
+            }
+
+            if (closeFixedScopeModalBtn) {
+                closeFixedScopeModalBtn.addEventListener('click', function () {
+                    pendingCancelForm = null;
+                    closeFixedScopeModal();
+                });
+            }
+
+            if (cancelThisWeekBtn) {
+                cancelThisWeekBtn.addEventListener('click', function () {
+                    if (!pendingCancelForm) {
+                        return;
+                    }
+                    const scopeInput = pendingCancelForm.querySelector('[data-block-cancel-scope]');
+                    if (scopeInput) {
+                        scopeInput.value = 'this_week';
+                    }
+                    closeFixedScopeModal();
+                    pendingCancelForm.submit();
+                });
+            }
+
+            if (cancelForeverBtn) {
+                cancelForeverBtn.addEventListener('click', function () {
+                    if (!pendingCancelForm) {
+                        return;
+                    }
+                    const scopeInput = pendingCancelForm.querySelector('[data-block-cancel-scope]');
+                    if (scopeInput) {
+                        scopeInput.value = 'permanent';
+                    }
+                    closeFixedScopeModal();
+                    pendingCancelForm.submit();
                 });
             }
 
